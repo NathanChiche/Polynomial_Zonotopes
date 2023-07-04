@@ -11,6 +11,8 @@ using TimerOutputs
 #include("test.jl")
 #using StatsPlots
 
+#changement pour github
+
 const to = TimerOutput();
 function arg_min(a::Float64,b::Float64)
     """arg_min classique entre deux éléments a et b: réel c dans [a;b] de module minimal"""
@@ -595,7 +597,6 @@ end
     #plot_sampling(fin[2],R,"Documents/enfinpolynomial")
   
 end
-
 
 
 main()
