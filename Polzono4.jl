@@ -565,10 +565,6 @@ end
 
     p1=x^3 -0.5*x^2+0.5
     p2=y^3 -0.5*y^2+0.5
-    #p2=x*y^2
-    p4=3/5*p1+4/5*p2
-    p5=(-4/5)*p1+3/5*p2
-    
 
     p6=(3/5*x +4/5*y)^3 -0.5*(3/5*x +4/5*y)^2+0.5
     p7=((-4/5)*x+3/5*y)^3 -0.5*((-4/5)*x+3/5*y)^2+0.5
@@ -630,44 +626,6 @@ fin=iterate_polynomials_over_PZ([p1,p2],P1,2,0,R,25000,300,5000,1.1,false)
 @show(get_polynomials_from_SSPZ(fin[1],R))
 @show(get_polynomials_from_SSPZ(fin[2],R))
 
-affiche_liste(get_polynomials_from_SSPZ(P1,R))
-affiche_liste(get_polynomials_from_SSPZ(fin[1],R))
-affiche_liste(get_polynomials_from_SSPZ(fin[2],R))
-affiche_liste(get_polynomials_from_SSPZ(fin[3],R))
-
-plot_sampling(fin[length(fin)],R,"Documents/classique_joinbary_2_iterations_resultatbis")
 
 
 
-#Q=RationalField(16)
-S,(x,y,z,t)=PolynomialRing(R,["x","y","z","t"])
-
-P=get_SSPZ_from_polynomials([14*x^37+y^42+7*x+12*x*y*z+3*t^2,x*y+z^3])
-
-@show(get_polynomials_from_SSPZ(P,R))
-
-P2=reduce_order_SSPZ(P,4,3,4,R)
-@show(get_polynomials_from_SSPZ(P2,R))
-plot_sampling(P2,R,"Documents/pitie")
-plot_sampling(P,R,"Documents/pitiedepart")
-pl=plot(P,nsdiv=20)
-savefig(pl,"Documents/pitiedepa")
-
-p=x*y^2+t
-q=x*y
-list=[]
-for i in 1:length(p)
-    push!(list,exponent_vector(p,i))
-end
-e=list[1]
-sum(e)
-
-Ann=parent(p)
-Ann
-A,(a,b)=PolynomialRing(R,["a","b"])
-pol=a^2+a*b
-pol([p,q])
-poly=evaluate(pol,[p,q])
-parent(pol)
-poly3=pol(p,q)
-parent(poly3)
