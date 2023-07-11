@@ -112,7 +112,7 @@ function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
     return 
 end
 
-function SimpleSPZ_to_SPZ(PZ)
+function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope{Float64, Vector{Float64}, Matrix{Float64}, Matrix{Int64}})
     println("on rentre")
     E=expmat(PZ)
     G=genmat(PZ)
@@ -143,6 +143,8 @@ function SimpleSPZ_to_SPZ(PZ)
     return SparsePolynomialZonotope(c,GD,GI,E)
 end
 
+methods(get_polynomials_from_SSPZ)
+
 function simple_exponent(exponent::Vector{Int64})
     cp=0
     index=0
@@ -169,6 +171,7 @@ function zeros_except_index(line::Vector{Int64},index::Int64)
 end
 
 @timeit to function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)
+
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
     c=LazySets.center(PZ)
     G=genmat(PZ)
@@ -685,7 +688,14 @@ P1=get_SSPZ_from_polynomials([p6,p7])
 P2=get_SSPZ_from_polynomials([p1,p2])
 genmat(P2)
 P2.G
+
+get_polynomials_from_SSPZ(P2,R)
+typeof(P2)
+
 P3=SimpleSPZ_to_SPZ(P2)
+
+
+
 expmat(P1)
 P1.c
 genmat_indep(P1)
