@@ -107,6 +107,68 @@ end
     return monomials
 end    
 
+c_ = zeros(Float64,2)
+G = [2. 1 2; 0 2 2]
+GI = hcat([1.; 0])
+Gi=[1.;0]
+G
+E = [1 0 3; 0 1 1]
+e=E[:,1]
+length(e)
+PZ = SparsePolynomialZonotope(c_, G, GI, E)
+PZ
+size(expmat(PZ))[2]
+colonne=[ 0, 0]
+zer=zeros(Int64,2)
+colonne==zer
+e2=E[:,2]
+e+e2
+
+
+    # Example 3.1.21 from thesis
+
+
+@timeit to function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope)
+    len=size(expmat(PZ))[2]
+    c=zeros(Float)
+    zero=zeros(Int64,len)
+    for i in 1:len
+        if E[:,i]==zero
+            c=c+E[:,i]
+        end
+
+    end 
+    return 0
+end
+
+@timeit to function simple_exponent(exponent::Vector{Int64})
+    cp=0
+    index=0
+    for j in 1:length(exponent)
+        e=exponent[j]
+        cp=cp+e
+        if e==1
+            index=j
+        end
+        if cp>1
+            return 0
+        end
+    end
+    return index
+end
+@timeit to function zeros_except_index(line::Vector{Int64},index::Int64)
+    for i in 1:length(line)
+        if i!= index && line[i]!=0
+            return false
+        end
+    end
+    return true
+end
+
+ex=E[1,:]
+ex=[0, 1 , 2, 3 , 4]
+ex=[0, 1 ,0,0,0,0]
+zeros_except_index(ex,2)
 
 @timeit to function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
@@ -327,7 +389,7 @@ end
     while i<nb_iter
         println(i)
         PZ_interm=poly_apply_on_SSPZ(PZ,Polynomes,field)
-        PZ_interm=reduce_order_SSPZ(PZ_interm,max_order,toreduce,maxdegree,field)
+        #PZ_interm=reduce_order_SSPZ(PZ_interm,max_order,toreduce,maxdegree,field)
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
         if i>= borne_union
             PZ=f(PZ,PZ_interm,field)
@@ -574,7 +636,7 @@ end
     #affichematrice(expmat(P1))
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([p1,p2],P1,4,0,R,1500000000,2000000000,12000000000,1.1,false)
+    fin=iterate_polynomials_over_PZ([p1,p2],P1,11,25,R,1500000000,2000000000,12000000000,1.1,false)
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
@@ -618,6 +680,7 @@ p7=((-4/5)*x+3/5*y)^3 -0.5*((-4/5)*x+3/5*y)^2+0.5
 
 
 P1=get_SSPZ_from_polynomials([p6,p7])
+genmat_indep(P1)
 P1
 reduce_order(P1,2)
 E=expmat(P1)
@@ -625,7 +688,4 @@ typeof(E)==Matrix{Int64}
 fin=iterate_polynomials_over_PZ([p1,p2],P1,2,0,R,25000,300,5000,1.1,false)
 @show(get_polynomials_from_SSPZ(fin[1],R))
 @show(get_polynomials_from_SSPZ(fin[2],R))
-
-
-
 
