@@ -107,41 +107,43 @@ end
     return monomials
 end    
 
-c_ = zeros(Float64,2)
-G = [2. 1 2; 0 2 2]
-GI = hcat([1.; 0])
-Gi=[1.;0]
-G
-E = [1 0 3; 0 1 1]
-e=E[:,1]
-length(e)
-PZ = SparsePolynomialZonotope(c_, G, GI, E)
-PZ
-size(expmat(PZ))[2]
-colonne=[ 0, 0]
-zer=zeros(Int64,2)
-colonne==zer
-e2=E[:,2]
-e+e2
 
-
-    # Example 3.1.21 from thesis
-
-
-@timeit to function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope)
-    len=size(expmat(PZ))[2]
-    c=zeros(Float)
-    zero=zeros(Int64,len)
-    for i in 1:len
-        if E[:,i]==zero
-            c=c+E[:,i]
-        end
-
-    end 
-    return 0
+function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
+    return 
 end
 
-@timeit to function simple_exponent(exponent::Vector{Int64})
+function SimpleSPZ_to_SPZ(PZ)
+    println("on rentre")
+    E=expmat(PZ)
+    G=genmat(PZ)
+    n=size(E)[1]
+    println("step1")
+    GI=Array{Float64}(undef,n,0)
+    println("step2")
+    GD=Array{Float64}(undef,n,0)
+    Enew=Array{Float64}(undef,n,0)
+    println("step3")
+    len=size(E)[2]
+    c=PZ.c
+    zero=zeros(Int64,len)
+    println("step4")
+    for i in 1:len
+        expo=E[:,i]
+        coeffs=G[:,i]
+        simple=simple_exponent(e)
+        if expo==zero
+            c=c+coeffs
+        elseif simple>0 && zeros_except_index(E[simple,:],i)
+            GI=hcat(GI,coeffs)
+        else
+            GD=hcat(GD,coeffs)
+            Enew=hcat(Enew,expo)
+        end
+    end 
+    return SparsePolynomialZonotope(c,GD,GI,E)
+end
+
+function simple_exponent(exponent::Vector{Int64})
     cp=0
     index=0
     for j in 1:length(exponent)
@@ -156,7 +158,8 @@ end
     end
     return index
 end
-@timeit to function zeros_except_index(line::Vector{Int64},index::Int64)
+
+function zeros_except_index(line::Vector{Int64},index::Int64)
     for i in 1:length(line)
         if i!= index && line[i]!=0
             return false
@@ -164,11 +167,6 @@ end
     end
     return true
 end
-
-ex=E[1,:]
-ex=[0, 1 , 2, 3 , 4]
-ex=[0, 1 ,0,0,0,0]
-zeros_except_index(ex,2)
 
 @timeit to function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
@@ -678,8 +676,18 @@ p5=(-4/5)*p1+3/5*p2
 p6=(3/5*x +4/5*y)^3 -0.5*(3/5*x +4/5*y)^2+0.5
 p7=((-4/5)*x+3/5*y)^3 -0.5*((-4/5)*x+3/5*y)^2+0.5
 
+n=2
+G=Array{Float64}(undef,n,0)
+G=hcat(G,[1., 9.12])
+G=hcat(G,[1., 9.12])
 
 P1=get_SSPZ_from_polynomials([p6,p7])
+P2=get_SSPZ_from_polynomials([p1,p2])
+genmat(P2)
+P2.G
+P3=SimpleSPZ_to_SPZ(P2)
+expmat(P1)
+P1.c
 genmat_indep(P1)
 P1
 reduce_order(P1,2)
