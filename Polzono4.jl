@@ -437,10 +437,12 @@ end
             println("on a trouvé notre invariant")
             return PZ_interm
         end=#
-
+        PZ=SimpleSPZ_to_SPZ(PZ)
         if LazySets.order(PZ)>ordermax
             PZ=reduce_order(PZ,ordermax-1)
         end
+        PZ=SPZ_to_SimpleSPZ(PZ)
+
         #PZ=reduce_order_SSPZ(PZ,max_order,toreduce,maxdegree,field)
 
         #=if i%3==0 && i>0
@@ -730,6 +732,8 @@ P2.c
 
 get_polynomials_from_SSPZ(P2,R)
 typeof(P2)
+
+LazySets.order(P1)
 
 
 
