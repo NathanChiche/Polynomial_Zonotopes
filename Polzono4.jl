@@ -381,6 +381,8 @@ end
     """on met le polynome pol dans un anneau multivarié Anneau ssi il est plus grand que parent(pol)"""
     n=length(gens(parent(pol)))
     m=length(gens(Anneau))
+    #println("Anneau: ",Anneau)
+
     @assert m>=n "dimension problem "
     p=Anneau(0)
     exponents=collect(exponent_vector(pol,j) for j in 1:length(pol))
@@ -391,13 +393,18 @@ end
     return p
 end
 
+max(1,2.0)
+
 
 @timeit to function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Field)
     """union barycentrique entre PZ1 et PZ2"""
     nb=size(genmat(PZ1))[1]
-    nb_vars=size(expmat(PZ1))[1]
+    nb_vars=max(size(expmat(PZ1))[1],size(expmat(PZ2))[1])
+    #println("nombre de variables avant de join: ",nb_vars)
     Polynomes1=get_polynomials_from_SSPZ(PZ1,field)
+    #println("nombre de var: ", length(gens(parent(Polynomes1[1]))))
     Polynomes2=get_polynomials_from_SSPZ(PZ2,field)
+    #println("nombre de var: ", length(gens(parent(Polynomes2[1]))))
     Anneau,(x)=PolynomialRing(field,nb_vars+1)
     Polynomes=[Anneau(0) for i in 1:nb]
     for i in 1:nb
@@ -423,7 +430,10 @@ end
     end
     while i<nb_iter
         println(i)
+        println("coucou")
+        println("nb variables PZ: ",size(PZ.E)[1])
         PZ_interm=poly_apply_on_SSPZ(PZ,Polynomes,field)
+        println("nb variables PZ_interm: ",size(PZ_interm.E)[1])
         #if(LazySets.order(PZ_interm))
         #PZ_interm=reduce_order_SSPZ(PZ_interm,max_order,toreduce,maxdegree,field)
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
@@ -677,7 +687,7 @@ end
     #affichematrice(expmat(P1))
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([p1,p2],P1,5,1,R,40,2000000000,12000000000,1.1,false)
+    fin=iterate_polynomials_over_PZ([p1,p2],P1,5,1,R,40,2000,12000,1.1,false)
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
