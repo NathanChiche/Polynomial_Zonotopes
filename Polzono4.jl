@@ -108,29 +108,61 @@ end
 end    
 
 
-function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
-    return 
+@timeit to function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
+    nb_indep=size(PZ.GI)[2]
+    Gnew=hcat(PZ.G,PZ.GI)
+    n=size(PZ.E)[1]
+    Enew=Array{Int64}(undef,nb_indep+n,0)
+    z=zeros(Int64,nb_indep)
+    v=zeros(Int64,nb_indep+n)
+    for i in 1:size(PZ.E)[2]
+        println(size(Enew)[1])
+        println(size(PZ.E)[1])
+        Enew=hcat(Enew,vcat(PZ.E[:,i],z))
+    end
+
+    for j in 1:nb_indep
+        v_temp=v
+        v_temp[n+j]=1
+        Enew=hcat(Enew,v_temp)
+    end
+    return SimpleSparsePolynomialZonotope(PZ.c,Gnew,Enew)
 end
 
-function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope{Float64, Vector{Float64}, Matrix{Float64}, Matrix{Int64}})
-    println("on rentre")
+function remove_zero_lines(M::Matrix{Int64})
+    z=zeros(size(M)[2])
+    i=1
+    while i<=size(M)[1]
+        if M[i,:]==z
+            if i==1
+                M=M[2:end,:]
+            elseif i==size(M)[1]
+                M=M[1:end-1,:]
+            else
+                M=vcat(M[1:i-1,:],M[i+1:end,:])
+            end
+        else
+            i=i+1
+        end
+    end
+    return M
+end
+
+@timeit to function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope{Float64, Vector{Float64}, Matrix{Float64}, Matrix{Int64}})
     E=expmat(PZ)
     G=genmat(PZ)
     n=size(E)[1]
-    println("step1")
     GI=Array{Float64}(undef,n,0)
-    println("step2")
     GD=Array{Float64}(undef,n,0)
-    Enew=Array{Float64}(undef,n,0)
-    println("step3")
+    Enew=Array{Int64}(undef,n,0)
     len=size(E)[2]
     c=PZ.c
     zero=zeros(Int64,len)
-    println("step4")
     for i in 1:len
         expo=E[:,i]
         coeffs=G[:,i]
-        simple=simple_exponent(e)
+        simple=simple_exponent(expo)
+       
         if expo==zero
             c=c+coeffs
         elseif simple>0 && zeros_except_index(E[simple,:],i)
@@ -140,10 +172,12 @@ function SimpleSPZ_to_SPZ(PZ::SimpleSparsePolynomialZonotope{Float64, Vector{Flo
             Enew=hcat(Enew,expo)
         end
     end 
-    return SparsePolynomialZonotope(c,GD,GI,E)
+    #println(size(GD)[2],size(Enew)[2])
+    #GD=remove_zero_lines(GD)
+    Enew=remove_zero_lines(Enew)
+    return SparsePolynomialZonotope(c,GD,GI,Enew)
 end
 
-methods(get_polynomials_from_SSPZ)
 
 function simple_exponent(exponent::Vector{Int64})
     cp=0
@@ -382,7 +416,7 @@ end
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     i=0
     liste=[PZ]
-    if choice==true
+    if choice
         f=union_pol_zono
     else
         f=barycentre_union
@@ -390,6 +424,7 @@ end
     while i<nb_iter
         println(i)
         PZ_interm=poly_apply_on_SSPZ(PZ,Polynomes,field)
+        #if(LazySets.order(PZ_interm))
         #PZ_interm=reduce_order_SSPZ(PZ_interm,max_order,toreduce,maxdegree,field)
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
         if i>= borne_union
@@ -403,7 +438,10 @@ end
             return PZ_interm
         end=#
 
-        """PZ=reduce_order_SSPZ(PZ,max_order,toreduce,maxdegree,field)"""
+        if LazySets.order(PZ)>ordermax
+            PZ=reduce_order(PZ,ordermax-1)
+        end
+        #PZ=reduce_order_SSPZ(PZ,max_order,toreduce,maxdegree,field)
 
         #=if i%3==0 && i>0
             PZ=scale_SSPZ(scale_factor,PZ)
@@ -637,7 +675,7 @@ end
     #affichematrice(expmat(P1))
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([p1,p2],P1,11,25,R,1500000000,2000000000,12000000000,1.1,false)
+    fin=iterate_polynomials_over_PZ([p1,p2],P1,5,1,R,40,2000000000,12000000000,1.1,false)
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
@@ -688,22 +726,44 @@ P1=get_SSPZ_from_polynomials([p6,p7])
 P2=get_SSPZ_from_polynomials([p1,p2])
 genmat(P2)
 P2.G
+P2.c
 
 get_polynomials_from_SSPZ(P2,R)
 typeof(P2)
 
-P3=SimpleSPZ_to_SPZ(P2)
 
 
+P4=get_SSPZ_from_polynomials([x^2+x^3+17+y, 2*y])
+P3=SimpleSPZ_to_SPZ(P4)
+P3
+Red=reduce_order(P3,2)
+P3.E
+Red.GI
+LazySets.order(P3)
 
-expmat(P1)
-P1.c
-genmat_indep(P1)
-P1
-reduce_order(P1,2)
+
+get_polynomials_from_SSPZ(P1,R)
+
+
 E=expmat(P1)
 typeof(E)==Matrix{Int64}
 fin=iterate_polynomials_over_PZ([p1,p2],P1,2,0,R,25000,300,5000,1.1,false)
 @show(get_polynomials_from_SSPZ(fin[1],R))
 @show(get_polynomials_from_SSPZ(fin[2],R))
+
+c_ = [0.0, 0]
+    G = [-1.0 -2.0 -1.0 2.0 0.01 0.4
+         1.0 0.0 -1.0 1.0 0.2 0.0]
+
+    GI = [0.2 0.01
+          0.02 -0.4]
+
+    E = [1 0 1 2 2 0
+         0 1 1 0 0 2
+         0 0 0 0 1 2]
+
+    P = SparsePolynomialZonotope(c_, G, GI, E)
+    Pred = reduce_order(P, 3)
+    Pred.G
+reduce_order(P1,3)
 
