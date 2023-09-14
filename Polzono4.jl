@@ -116,8 +116,8 @@ end
     z=zeros(Int64,nb_indep)
     v=zeros(Int64,nb_indep+n)
     for i in 1:size(PZ.E)[2]
-        println(size(Enew)[1])
-        println(size(PZ.E)[1])
+        #println(size(Enew)[1])
+        #println(size(PZ.E)[1])
         Enew=hcat(Enew,vcat(PZ.E[:,i],z))
     end
 
@@ -152,8 +152,9 @@ end
     E=expmat(PZ)
     G=genmat(PZ)
     n=size(E)[1]
-    GI=Array{Float64}(undef,n,0)
-    GD=Array{Float64}(undef,n,0)
+    m=size(G)[1]
+    GI=Array{Float64}(undef,m,0)
+    GD=Array{Float64}(undef,m,0)
     Enew=Array{Int64}(undef,n,0)
     len=size(E)[2]
     c=PZ.c
@@ -224,12 +225,12 @@ end
     return Polynomes
 end
 
-@timeit to function get_SSPZ_from_polynomials(Polynomes::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}})#il faut faire qqchose pour éviter les polynomes de dimesion 1
+@timeit to function get_SSPZ_from_polynomials(Polynomes)#il faut faire qqchose pour éviter les polynomes de dimesion 1
     """récupérer la forme PZ=<c,G,E> à partir de  PZ={(P1(x1,...xp),...,Pn(x1,...xp)) """
 
     liste_exp=Vector{Int64}[]
     n=length(Polynomes)
-    deg_list=Array{Int}(undef,n)
+    #deg_list=Array{Int}(undef,n)
     for i in 1:n
         for j in 1:length(Polynomes[i])
             exp=exponent_vector(Polynomes[i],j)
@@ -242,24 +243,36 @@ end
     zero=zeros(Int64,nb_vars)
     deleteat!(liste_exp,findall(x->x==zero,liste_exp))
     nb_monomes=length(liste_exp)#on compte le nombre de monômes pour la taille de G après avoir enlevé le monôme constant
+    println("nb monomes dans getSSPZ from poly: ",nb_monomes)
     G=zeros(n,nb_monomes)
     #E=zeros([T={Int64}],nb_vars,nb_monomes)
     E=Array{Int64}(undef,nb_vars,nb_monomes)
     c=zeros(n)
+    tmp=0
     for i in 1:nb_monomes
         for k in 1:nb_vars
             E[k,i]=liste_exp[i][k] # remplissage de la matrice des exposants
         end
+        
         for j in 1:n
             exp=liste_exp[i]
-            G[j,i]+=Float64(coeff(Polynomes[j],exp)) #remplissage de la matrice génératrice 
+            a=Float64(coeff(Polynomes[j],exp))
+            if a==0
+                tmp=tmp+1
+            end  
+            G[j,i]+=a #remplissage de la matrice génératrice 
         end
     end
+    println("nombre de coeffs nuls sur exposants: ",tmp)
     for i in 1:n
         c[i]=Float64(coeff(Polynomes[i],zero)) #remplissage ici du vecteur de centre 
     end
+
+    println("taille de E apres modifs dans getSSPZ: ",size(E)[2])
     return SimpleSparsePolynomialZonotope(c,G,E)
 end
+
+methods(get_SSPZ_from_polynomials)
 
 @timeit to function variables_up_to(variables,exponent::Vector{Int64})
     if length(variables)!=length(exponent)
@@ -284,7 +297,7 @@ end
     return evaluate(p,list_poly)
 end
 
-@timeit to function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}},field::Field)
+@timeit to function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Field)
     nb_vars=size(expmat(PZ))[1]#nombre de variables est le nombre de lignes de la matrice des exposants
     composit=[]
     #anneau,(x)=PolynomialRing(field,nb_vars)
@@ -295,6 +308,9 @@ end
         res=compose(p,Poly_fromPZ)
         push!(composit,res)
     end
+    println("a l'interieur de la compo: ",length(composit[1]))
+    #res=get_SSPZ_from_polynomials(composit)
+    #println("apres changement de représentation: ",size(res.E)[2])
     return get_SSPZ_from_polynomials(composit)
 end
 
@@ -377,7 +393,7 @@ end
     return get_SSPZ_from_polynomials(poly_union)
 end
 
-@timeit to function copy_poly(pol::Nemo.AbstractAlgebra.Generic.MPoly{FieldElem},Anneau::Nemo.AbstractAlgebra.Generic.MPolyRing{FieldElem})
+@timeit to function copy_poly(pol,Anneau)
     """on met le polynome pol dans un anneau multivarié Anneau ssi il est plus grand que parent(pol)"""
     n=length(gens(parent(pol)))
     m=length(gens(Anneau))
@@ -393,7 +409,6 @@ end
     return p
 end
 
-max(1,2.0)
 
 
 @timeit to function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Field)
@@ -419,7 +434,7 @@ end
 end
 
 
-@timeit to function iterate_polynomials_over_PZ(Polynomes::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}},PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,max_order::Int64,toreduce::Int64,maxdegree::Int64,scale_factor::Float64,choice::Bool=true)
+@timeit to function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,max_order::Int64,toreduce::Int64,maxdegree::Int64,scale_factor::Float64,choice::Bool=true)
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     i=0
     liste=[PZ]
@@ -434,6 +449,7 @@ end
         println("nb variables PZ: ",size(PZ.E)[1])
         PZ_interm=poly_apply_on_SSPZ(PZ,Polynomes,field)
         println("nb variables PZ_interm: ",size(PZ_interm.E)[1])
+        
         #if(LazySets.order(PZ_interm))
         #PZ_interm=reduce_order_SSPZ(PZ_interm,max_order,toreduce,maxdegree,field)
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
@@ -443,17 +459,19 @@ end
             PZ=PZ_interm
         end
         println("number of terms ",size(expmat(PZ))[2])
+        println("nb of terms bis p1: ",length(get_polynomials_from_SSPZ(PZ,field)[1]))
+        println("nb of terms bis p2: ",length(get_polynomials_from_SSPZ(PZ,field)[2]))
         #=if inclusion_test(get_polynomials_from_SSPZ(PZ,field),get_polynomials_from_SSPZ(PZ_interm,field))
             println("on a trouvé notre invariant")
             return PZ_interm
         end=#
-        PZ=SimpleSPZ_to_SPZ(PZ)
-        if LazySets.order(PZ)>ordermax
-            PZ=reduce_order(PZ,ordermax-1)
+        #=PZ=SimpleSPZ_to_SPZ(PZ)
+        if LazySets.order(PZ)>max_order
+            println("reduction")
+            PZ=reduce_order(PZ,max_order-1)
         end
-        PZ=SPZ_to_SimpleSPZ(PZ)
+        PZ=SPZ_to_SimpleSPZ(PZ)=#
 
-        #PZ=reduce_order_SSPZ(PZ,max_order,toreduce,maxdegree,field)
 
         #=if i%3==0 && i>0
             PZ=scale_SSPZ(scale_factor,PZ)
@@ -465,7 +483,7 @@ end
     return liste
 end
 
-@timeit to function evaluate_polynomials_on_vector(polynomials::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}},vector::Vector{Float64})
+@timeit to function evaluate_polynomials_on_vector(polynomials,vector::Vector{Float64})
     return [Float64(evaluate(polynomials[i],vector)) for i in 1:length(polynomials)]
 end
 
@@ -485,7 +503,7 @@ end
     return pl
 end    
 
-@timeit to function strict_iterates(Polynomes::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}},PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,field::Field)
+@timeit to function strict_iterates(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,field::Field)
     i=0
     liste=[PZ]
     PZ_interm=PZ
@@ -501,7 +519,7 @@ end
 end
 
 
-@timeit to function plot_multiple(liste_PZ::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}},field::Field,filename::String,xlim=nothing,ylim=nothing,nbpoints=300000)
+@timeit to function plot_multiple(liste_PZ,field::Field,filename::String,xlim=nothing,ylim=nothing,nbpoints=300000)
     i=1
     for PZ in liste_PZ
         println("coucou")
@@ -532,7 +550,7 @@ end
     savefig(filename)
 end
 
-@timeit to function test_monomial_in_common(p::Nemo.AbstractAlgebra.Generic.MPoly{FieldElem},q::Nemo.AbstractAlgebra.Generic.MPoly{FieldElem})
+@timeit to function test_monomial_in_common(p,q)
     exponents=collect(exponent_vector(p,j) for j in 1:length(p))
     for e in exponents
         if coeff(p,e)!=0 && coeff(q,e)!=0
@@ -650,7 +668,7 @@ end
     return get_SSPZ_from_polynomials(final_polys)
 end
 
-@timeit to function affiche_polynomes(pol::Nemo.AbstractAlgebra.Generic.MPoly{FieldElem})
+@timeit to function affiche_polynomes(pol)
     #exponents=collect(exponent_vector(pol,j) for j in 1:length(pol))
     str=""
     println(str)
@@ -666,7 +684,7 @@ end
     end
     println(str)
 end
-function affiche_liste(list_poly::Vector{Nemo.AbstractAlgebra.Generic.MPoly{FieldElem}})
+function affiche_liste(list_poly)
     for p in list_poly
         affiche_polynomes(p)
     end
@@ -687,7 +705,7 @@ end
     #affichematrice(expmat(P1))
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([p1,p2],P1,5,1,R,40,2000,12000,1.1,false)
+    fin=iterate_polynomials_over_PZ([p1,p2],P1,10,516,R,10000,2000,12000,1.1,false)
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
@@ -708,6 +726,8 @@ end
 end
 
 
+
+
 main()
 #to
 
@@ -716,12 +736,68 @@ R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
 typeof(S)
 
-str="documents/cd"
-typeof(str)
+
 p1=x^3 -0.5*x^2+0.5
 p2=y^3 -0.5*y^2+0.5
-typeof(p1)
-typeof(l)
+
+
+q1=1/20*x + 0.4 
+q2=1/20*y+0.40
+
+t=x^3
+t1=x+1
+function testdegre(n::Int64,pol,qol,q1,q2)
+    for i in 1:n
+        #println(q1)
+        q1t=compose(pol,[q1,q2])
+        q2=compose(qol,[q1,q2])
+        q1=q1t
+        #q1=pol(q1,q2)
+        #q2=qol(q1,q2)
+        print(i)
+        println(": nombre de termes de p ->",length(q1))
+        
+    end
+    return q1
+end
+
+g1=x^3
+g2=y^3
+h1=x+1
+h2=y+1
+
+k=testdegre(6,p1,p2,q1,q2)
+length(k)
+k=testdegre(9,p1,p2,q1,q2)
+length(k)
+
+affiche_polynomes(k)
+
+
+h=p1([q1,q2])
+h=h(q1,q2)
+
+p1=evaluate(p1,[q1,q2])
+p1=evaluate(p1,[q1,q2])
+
+
+
+Dep=get_SSPZ_from_polynomials([1/20*x + 0.4 ,1/20*y+0.40])
+SP1=poly_apply_on_SSPZ(Dep,[p1,p2],R)
+SP1=barycentre_union(Dep,SP1,R)
+liste=get_polynomials_from_SSPZ(SP1,R)
+affiche_liste(liste)
+SP1.E
+SP1.G
+SP1.c
+
+P1=SimpleSPZ_to_SPZ(SP1)
+SP1=SPZ_to_SimpleSPZ(P1)
+SP1.E
+SP1.G
+SP1.c
+
+
     #p2=x*y^2
 p4=3/5*p1+4/5*p2
 p5=(-4/5)*p1+3/5*p2
@@ -736,6 +812,20 @@ G=hcat(G,[1., 9.12])
 
 P1=get_SSPZ_from_polynomials([p6,p7])
 P2=get_SSPZ_from_polynomials([p1,p2])
+
+GI = [1 0.0
+          0.0 0]
+G2=[0 0.0
+0.0 0]
+
+
+pl=x
+ql=y+1
+PA=get_SSPZ_from_polynomials([pl,ql])
+get_polynomials_from_SSPZ(PA,R)
+QZ=quadratic_map([GI,G2 ],PA,PA)
+get_polynomials_from_SSPZ(QZ,R)
+QZ
 genmat(P2)
 P2.G
 P2.c
@@ -748,6 +838,7 @@ LazySets.order(P1)
 
 
 P4=get_SSPZ_from_polynomials([x^2+x^3+17+y, 2*y])
+ngens(P4)
 P3=SimpleSPZ_to_SPZ(P4)
 P3
 Red=reduce_order(P3,2)
@@ -780,4 +871,6 @@ c_ = [0.0, 0]
     Pred = reduce_order(P, 3)
     Pred.G
 reduce_order(P1,3)
+
+Pt=get_SSPZ_from_polynomials([x])
 
