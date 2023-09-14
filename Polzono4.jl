@@ -813,22 +813,32 @@ G=hcat(G,[1., 9.12])
 P1=get_SSPZ_from_polynomials([p6,p7])
 P2=get_SSPZ_from_polynomials([p1,p2])
 
-GI = [1 0.0
-          0.0 0]
-G2=[0 0.0
-0.0 0]
+GI = Array{Float64}(undef,1,1)
+GI[1,1]=1
+GI
+G2=[ 0.0 0
+0.0 1]
 
 
 pl=x
 ql=y+1
 PA=get_SSPZ_from_polynomials([pl,ql])
+2*PA
 get_polynomials_from_SSPZ(PA,R)
-QZ=quadratic_map([GI,G2 ],PA,PA)
+QZ=quadratic_map([GI],PA,PA)
 get_polynomials_from_SSPZ(QZ,R)
 QZ
+
+SZ=quadratic_map([GI],QZ,QZ)
+get_polynomials_from_SSPZ(SZ,R)
 genmat(P2)
+PB=PA+PA
+get_polynomials_from_SSPZ(PB,R)
 P2.G
 P2.c
+
+remove_redundant_generators(QZ)
+QZ
 
 get_polynomials_from_SSPZ(P2,R)
 typeof(P2)
@@ -856,21 +866,5 @@ fin=iterate_polynomials_over_PZ([p1,p2],P1,2,0,R,25000,300,5000,1.1,false)
 @show(get_polynomials_from_SSPZ(fin[1],R))
 @show(get_polynomials_from_SSPZ(fin[2],R))
 
-c_ = [0.0, 0]
-    G = [-1.0 -2.0 -1.0 2.0 0.01 0.4
-         1.0 0.0 -1.0 1.0 0.2 0.0]
 
-    GI = [0.2 0.01
-          0.02 -0.4]
-
-    E = [1 0 1 2 2 0
-         0 1 1 0 0 2
-         0 0 0 0 1 2]
-
-    P = SparsePolynomialZonotope(c_, G, GI, E)
-    Pred = reduce_order(P, 3)
-    Pred.G
-reduce_order(P1,3)
-
-Pt=get_SSPZ_from_polynomials([x])
 

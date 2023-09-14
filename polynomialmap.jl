@@ -9,6 +9,13 @@ function project(PZ,dim)
     return SimpleSparsePolynomialZonotope(cnew,Gnew,PZ.E)
 end
 
+function exact_sum_SSPZ(PZ1,PZ2) #CELLE CI NE FAIT PAS TELLEMENT DE SENS
+    cnew=PZ1.c+PZ2.c
+    Gnew=vcat(PZ1.G,PZ2.G)
+    Enew=vcat(PZ1.E,PZ2.E)
+    return remove_redundant_generators(cnew,Gnew,Enew)
+end
+
 function polynomial_map(PZ,coeffs,expmat)
     n=size(PZ.G)[1] #dimension of the polynomial zonotope
     summands=[]
@@ -43,23 +50,53 @@ function polynomial_map(PZ,coeffs,expmat)
             list=[]
         end
 
+        for j in 2:2:length(E)
+            Q=zeros(n,n)
+            Q[E[j-1],E[j]]=1
+            push!(list,quadratic_map([Q],PZ))
+        end
+        
+        res=list[1]
+        GI = Array{Float64}(undef,1,1)
+        GI[1,1]=1
+        for j in 2:length(list)
+            res=quadratic_map([GI],res,list[j])
+        end
 
+        push!(summands,coeffs[i,:]*res)
     end
 
+    if length(summands)>0
+        res=summands[1]+c
+        for j in 2:length(summands)
+            res=exact_sum_SSPZ(res,summands[j])
+        end
+    else
+        res=0*PZ+c
+    end
+
+    return res
+    
 end
 
-c_ = [0.0, 0]
-    G = [-1.0 -2.0 -1.0 2.0 0.01 0.4
-         1.0 0.0 -1.0 1.0 0.2 0.0]
+zeros(Int64,2,2)
+
+c_ = [1.0, 0]
+c_+c_
+    G = [-1.0  0.01 0.4 -1
+         1.0 0.2 0.0 1]
 
     GI = [0.2 0.01
           0.02 -0.4]
 
-    E = [1 0 1 2 2 0
-         0 1 1 0 0 2
-         0 0 0 0 1 2]
+    E = [1 2 0 1
+         0 0 2 0
+         0 1 2 0]
+Ptest=SimpleSparsePolynomialZonotope(c_,G,E)
+remove_redundant_generators(Ptest)  
+Ptest+Ptest
 
-c_[end]
+c_[end+1]=1
 a=sum(E,dims=1)
 a
 vec(a==0)
