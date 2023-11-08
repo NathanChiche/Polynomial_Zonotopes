@@ -5,6 +5,7 @@ using LazySets
 
 function project(PZ,dim)
     cnew=PZ.c[dim]
+    Gnew=Array{Float64}(undef,1,0)
     Gnew=PZ.G[dim,:]
     return SimpleSparsePolynomialZonotope(cnew,Gnew,PZ.E)
 end
@@ -76,8 +77,19 @@ function polynomial_map(PZ,coeffs,expmat)
     end
 
     return res
-    
+
 end
+
+c=[1 , 2.0]
+G=[1.0 -2 1; 2 3 1]
+E=[1 0 2;0 1 1]
+
+Ptest=SimpleSparsePolynomialZonotope(c,G,E)
+coef = [1 2;-1 0]
+expMat = [0 1;3 2]
+
+polynomial_map(Ptest,coef,expMat)
+
 
 zeros(Int64,2,2)
 
@@ -92,6 +104,7 @@ c_+c_
     E = [1 2 0 1
          0 0 2 0
          0 1 2 0]
+
 Ptest=SimpleSparsePolynomialZonotope(c_,G,E)
 remove_redundant_generators(Ptest)  
 Ptest+Ptest
