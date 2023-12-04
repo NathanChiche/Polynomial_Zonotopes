@@ -1,4 +1,3 @@
-#include("plot_polyzono.jl")
 using Nemo
 using LazySets
 using Plots
@@ -6,6 +5,7 @@ using Random
 using Symbolics
 using Dates
 using BenchmarkTools
+#include("plot_polyzono.jl")
 
 using TimerOutputs
 #include("test.jl")
@@ -109,11 +109,18 @@ end
 
 
 @timeit to function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
-    nb_indep=size(PZ.GI)[2]
+    dim,nb_indep=size(PZ.GI)
+    
+    z=zeros(Float64,dim,nb_indep)
+    if z==PZ.GI
+        return SimpleSparsePolynomialZonotope(PZ.c,PZ.G,PZ.E)
+    end
+    println("Mauvaise partie")
+    z=zeros(Int64,nb_indep)
     Gnew=hcat(PZ.G,PZ.GI)
     n=size(PZ.E)[1]
     Enew=Array{Int64}(undef,nb_indep+n,0)
-    z=zeros(Int64,nb_indep)
+    
     v=zeros(Int64,nb_indep+n)
     for i in 1:size(PZ.E)[2]
         #println(size(Enew)[1])
@@ -129,7 +136,7 @@ end
     return SimpleSparsePolynomialZonotope(PZ.c,Gnew,Enew)
 end
 
-function remove_zero_lines(M::Matrix{Int64})
+@timeit to function remove_zero_lines(M::Matrix{Int64})
     z=zeros(size(M)[2])
     i=1
     while i<=size(M)[1]
@@ -179,8 +186,23 @@ end
     return SparsePolynomialZonotope(c,GD,GI,Enew)
 end
 
+function SimpletoSPZ(SSPZ)
+    nb_vars=size(SSPZ.E)[1]
+    id=collect(1:nb_vars)
+    zer=zeros(Float64,length(SSPZ.c),1)
+    return SparsePolynomialZonotope(SSPZ.c,SSPZ.G,zer,SSPZ.E,id)
+end
 
-function simple_exponent(exponent::Vector{Int64})
+#=R=RealField()
+S,(x,y)=PolynomialRing(R,["x","y"])
+lineaire1=-0.32*x+0.32*y
+lineaire2= -0.42*x -0.92*y
+Plineaire=get_SSPZ_from_polynomials([x,y])
+image=poly_apply_on_SSPZ(Plineaire,[lineaire1,lineaire2],R)=#
+
+
+
+@timeit to function simple_exponent(exponent::Vector{Int64})
     cp=0
     index=0
     for j in 1:length(exponent)
@@ -196,7 +218,7 @@ function simple_exponent(exponent::Vector{Int64})
     return index
 end
 
-function zeros_except_index(line::Vector{Int64},index::Int64)
+@timeit to function zeros_except_index(line::Vector{Int64},index::Int64)
     for i in 1:length(line)
         if i!= index && line[i]!=0
             return false
@@ -323,7 +345,7 @@ end
 end
 
 
-@timeit to function inf_and_sup(polynomial)
+@timeit to function inf_and_supbis(polynomial)
     exponents=collect(exponent_vector(polynomial,i) for i in 1:length(polynomial))
     l=length(exponents[1])
     zero=zeros(l)
@@ -337,6 +359,29 @@ end
     end
     return [inf,sup]
 end
+
+@timeit to function inf_and_sup(polynomial)
+    exponents=collect(exponent_vector(polynomial,i) for i in 1:length(polynomial))
+    l=length(exponents[1])
+    zero=zeros(l)
+    sup=Float64(evaluate(polynomial,zero))
+    inf=Float64(evaluate(polynomial,zero))
+    for e in exponents
+        if e!=zero
+            if even_exponent(e)
+                sup=sup+abs(Float64(coeff(polynomial,e)))
+            else
+                sup=sup+abs(Float64(coeff(polynomial,e)))
+                inf=inf-abs(Float64(coeff(polynomial,e)))
+            end
+        end
+    end
+    return [inf,sup]
+end
+
+p=x^2*y^4+y
+el=collect(exponent_vector(p,i) for i in 1:length(p))
+even_exponent(el[2])
 
 @timeit to function mid_polynomials(p,q)
     return Float64((max(inf_and_sup(p)[2],inf_and_sup(q)[2])+min(inf_and_sup(p)[1],inf_and_sup(q)[1]))/2)
@@ -428,20 +473,55 @@ end
     return get_SSPZ_from_polynomials(Polynomes)
 end
 
+@timeit to function barycentric_join(SSPZ1,SSPZ2,field)
+    G1=SSPZ1.G
+    E1=SSPZ1.E
+    G2=SSPZ2.G
+    E2=SSPZ2.E
+    c1=SSPZ1.c
+    c2=SSPZ2.c
+    n1=size(E1)[2]
+    n2=size(E2)[2]
+    center=ones(Int64,1,2)
+    e1=zeros(Int64,1,n1)
+    e_1=ones(Int64,1,n1)
+    e2=zeros(Int64,1,n2)
+    e_2=ones(Int64,1,n2)
+    vecnew=hcat(center,e1,e_1,e2,e_2)
+    nlines=size(E1)[1]
+    t1=zeros(Int64,nlines,2)
+    #Redundant=SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew))
+
+    return remove_redundant_generators(SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew)))
+end
+
+PE=get_SSPZ_from_polynomials([x^2+y+3+x^7*y^4,x*y+x*x*y])
+PR=get_SSPZ_from_polynomials([y+7*y^2,x*y*7*9*x+x])
+
+PJ=barycentric_join(PE,PR,R)
+
+PJ2=barycentre_union(PE,PR,R)
+
+
 @timeit to function scale_SSPZ(factor::Float64,PZ::SimpleSparsePolynomialZonotope)
     G=factor*genmat(PZ)
     return SimpleSparsePolynomialZonotope(LazySets.center(PZ),G,expmat(PZ))
 end
 
 
-@timeit to function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,max_order::Int64,toreduce::Int64,maxdegree::Int64,scale_factor::Float64,choice::Bool=true;power::Int64=1)
+@timeit to function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1)
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     i=0
+    nb_reduc=0
     liste=[PZ]
-    if choice
+    if choice=="zono"
         f=union_pol_zono
-    else
+    elseif choice=="bary"
         f=barycentre_union
+        #f=barycentric_join
+    else
+        print("Le join n'est pas disponible")
+        return 0
     end
     while i<nb_iter
         #=if i%2==0
@@ -454,25 +534,36 @@ end
         println("coucou")
         println("nb variables PZ: ",size(PZ.E)[1])
         fPZ=liste[end]
+        PZ_previous=fPZ
         for p in 1:power 
             fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)
             
         end
-        println("nb variables PZ_interm: ",size(fPZ.E)[1])
-        
-        #if(LazySets.order(PZ_interm))
-        #fPZ=reduce_order_SSPZ(fPZ,max_order,toreduce,maxdegree,field)
-
-        PZ=SimpleSPZ_to_SPZ(fPZ)
-        if LazySets.order(PZ)>max_order
-            println("reduction")
-            PZ=reduce_order(PZ,max_order-1)
+        #println("nb variables PZ_interm: ",size(fPZ.E)[1])
+        println("nombre de termes avant la réduction: ",size(fPZ.E)[2])
+        polytest1=get_polynomials_from_SSPZ(fPZ,field)
+        PZ_reduc=SimpletoSPZ(fPZ)
+        if Float64(LazySets.order(PZ_reduc))>max_order
+            println("voici l'ordre du SSPZ: ",LazySets.order(PZ_reduc))
+            PZ_reduc=reduce_order(PZ_reduc,max_order)
+            println("ordre après reduction: ",LazySets.order(PZ_reduc))
+            nb_reduc=nb_reduc+1
         end
-        fPZ=SPZ_to_SimpleSPZ(PZ)
+        fPZ=SPZ_to_SimpleSPZ(PZ_reduc)
+        polytest2=get_polynomials_from_SSPZ(fPZ,field)
+
+        if nb_reduc==0 && polytest1!=polytest2
+            affiche_liste(polytest1)
+            affiche_liste(polytest2)
+            println("LOUPE")
+            @show(polytest1)
+            @show(polytest2)
+            return liste
+        end
 
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
         if i>= borne_union
-            PZ=f(PZ,fPZ,field)
+            PZ=f(PZ_previous,fPZ,field)
         else
             PZ=fPZ
         end
@@ -483,21 +574,12 @@ end
             println("on a trouvé notre invariant")
             return PZ_interm
         end=#
-        #=PZ=SimpleSPZ_to_SPZ(PZ)
-        if LazySets.order(PZ)>max_order
-            println("reduction")
-            PZ=reduce_order(PZ,max_order-1)
-        end
-        PZ=SPZ_to_SimpleSPZ(PZ)=#
+       
 
-
-        #=if i%3==0 && i>0
-            PZ=scale_SSPZ(scale_factor,PZ)
-            println("scale passée")
-        end=#
         i+=1
         push!(liste,PZ)
     end
+    println("nombre de réductions, ",nb_reduc)
     return liste
 end
 
@@ -702,6 +784,7 @@ end
     end
     println(str)
 end
+
 function affiche_liste(list_poly)
     for p in list_poly
         affiche_polynomes(p)
@@ -727,7 +810,10 @@ end
     henon1=1 - 1.4*x^2 + y
     henon2=0.3*x
 
-    step=0.1
+    lineaire1=-0.32*x+0.32*y
+    lineaire2= -0.42*x -0.92*y
+
+    step=0.25
     vanpol1=step*y + x
     vanpol2=step*(1-x^2)*y - step*x + y
 
@@ -737,8 +823,13 @@ end
     lokta1=step*(x*(1.5 - y)) + x
     lokta2=step*(-y*(3 - x)) + y
 
+    parillo1= step*(-x+x*y) + x
+    parillo2=step*(-y) + y
 
-    PChatal=get_SSPZ_from_polynomials([1/5*x+1/5 ,1/5*y+1/5])
+    PHenon=get_SSPZ_from_polynomials([1/5*x ,1/5*y])
+    Pparillo=get_SSPZ_from_polynomials([1/10*x+12 ,1/10*y+2])
+    PChatal=get_SSPZ_from_polynomials([1/6*x+1/6 ,1/6*y+1/6])
+    Plineaire=get_SSPZ_from_polynomials([x-2,y+1])
     P1=get_SSPZ_from_polynomials([x + 3  ,y+4])
     PVanPol=get_SSPZ_from_polynomials([0.15*x + 1.4  ,0.05*y+2.30])
     Plokta=get_SSPZ_from_polynomials([1/5*x + 5  ,1/5*y+2])
@@ -746,27 +837,35 @@ end
     #affichematrice(expmat(P1))
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,6,16,R,5,5,6,1.1,false)
+    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,4,2,R,"zono",max_order=25000000)
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
     #fin=reverse(fin)
     fini=fin[end]
-    #=println("nombre de variables à la fin: ",size((fini).E)[1])
+    println("nombre de variables à la fin: ",size((fini).E)[1])
     println("nombre de monomes à la fin: ",size(fini.E)[2])
     somme=sum(fini.E,dims=1)
     som=vec(somme)
-    println("degré maximal à la fin: ",maximum(som))=#
+    println("degré maximal à la fin: ",maximum(som))
     #affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    plot_multiple(fin,R,"Documents/julia/plots_julia/Chatal^1_6iter_nojoin_100000pts_reductionbis",nbpoints=100000)
-    #plot_sampling(fini,R,"Documents/julia/plots_julia/LoktaVolterra^1_3iter_joinbary_50000pts_step=0,25",nbpoints=50000)
+    plot_multiple(fin,R,"Documents/julia/plots_julia/chatal^1_4iter_joinzonoraffine2_30000pts_max_order=40000000bis",nbpoints=30000)
+    #plot_sampling(fini,R,"Documents/julia/plots_julia/Parillo^1_4iter_joinbary_100000pts_",nbpoints=100000)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire^1_4iter_joinbary1_40000pts_max_order=25_x-2_y+1",nbpoints=40000)
+    
+    #derniere=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
+
+    #plot_multiple([derniere,fini],R,"Documents/julia/plots_julia/lineaire^1_5iter_joinbary0_Inclusion?_1000000pt",nbpoints=1000000)
     end_time2 = now()
     elapsed = end_time2 - end_time
     println("temps de plot:", elapsed)
+
+    
     
 
     return fini
+    #return derniere
    
     
     #savefig(pl,"Documents/essai6iterees")
@@ -784,7 +883,103 @@ end
 
 
 r=main()
+r.G
+r.E
+r.G[:,1:10]
+r.G[:,11:20]
+r.G[:,21:23]
+r.c
 
+to
+
+R=RealField()
+S,(x,y)=PolynomialRing(R,["x","y"])
+lineaire1=-0.32*x+0.32*y
+lineaire2= -0.42*x -0.92*y
+chatal1= x+y
+chatal2=-0.5952 + x^2
+#Plineaire=get_SSPZ_from_polynomials([x,y])
+image=poly_apply_on_SSPZ(r,[lineaire1,lineaire2],R)
+image.G[:,1:10]
+image.G[:,11:23]
+image.G[:,1:10]
+image.c
+chatal5=poly_apply_on_SSPZ(r,[chatal1,chatal2],R)
+plot_multiple([r,image],R,"Documents/julia/plots_julia/lineaire^1_3iter_joinbary1_70000pts_max_order=25_x-2_y+1_inclusion?",nbpoints=70000)
+
+G=image.G
+0.5*G
+
+GZ=hcat(G,G,G)
+image2=SimpleSPZ_to_SPZ(image)
+plot(image2,nsdiv=30)
+
+image3=SPZ_to_SimpleSPZ(image2)
+plot([image,image3],nsdiv=45)
+image2
+
+rad=rand(SparsePolynomialZonotope)
+
+@show(reducto.G)
+
+
+
+
+println("coucou")
+#=r.G
+
+to
+agb=get_polynomials_from_SSPZ(r,R)
+affiche_liste(agb)
+
+R=RealField()
+
+function testconversion(n::Int64)
+    bool=true
+    for i in 1:n
+        ran=rand(SimpleSparsePolynomialZonotope)
+        sparse=SimpleSPZ_to_SPZ(ran)
+        simple=SPZ_to_SimpleSPZ(sparse)
+        if ran!=simple
+            println(1)
+            @show(ran)
+            @show(simple)
+            affiche_liste(get_polynomials_from_SSPZ(ran,R))
+            affiche_liste(get_polynomials_from_SSPZ(simple,R))
+            
+            return [ran,simple]
+        end
+    end
+    for i in 1:n
+        rand=rand(SparsePolynomialZonotope)
+        simple=SPZ_to_SimpleSPZ(rand)
+        sparse=SimpleSPZ_to_SPZ(simple)
+        if rand!=sparse
+            println(2)
+            @show(rand)
+            @show(sparse)
+            return false
+        end
+    end
+    return bool
+end
+
+li=testconversion(100)
+plot_multiple(li,R,"Documents/julia/plots_julia/testconversion")
+
+rando=rand(SimpleSparsePolynomialZonotope,num_generators=2)
+rando2=SimpleSPZ_to_SPZ(rando)
+rando3=SPZ_to_SimpleSPZ(rando2)
+rando
+rando==rando3
+
+rspz=SimpleSPZ_to_SPZ(r)
+LazySets.order(rspz)
+res=reduce_order(rspz,20)
+LazySets.order(res)
+res.E
+
+a=rand
 
 plot()
 plot(r)
@@ -803,9 +998,23 @@ plot(Z3)
 
 R=RealField()
 
-S,(x,y,z)=PolynomialRing(R,["x","y","z"])
-P3D=get_SSPZ_from_polynomials([x,y,z])
-plot_sampling(P3D,R,"Documents/julia/plots_julia/testtroisdmension")
+S,(x,y)=PolynomialRing(R,["x","y"])
+#P3D=get_SSPZ_from_polynomials([x,y,z])
+#plot_sampling(P3D,R,"Documents/julia/plots_julia/testtroisdmension")
+APRES=get_SSPZ_from_polynomials([x-x*y,y-x])
+APRES2=get_SSPZ_from_polynomials([x-x*y,y-x])
+APRES==APRES2
+typeof(APRES)
+random1=rand(SimpleSparsePolynomialZonotope)
+random1.E
+APRE=SimpleSPZ_to_SPZ(APRES)
+LazySets.order(APRE)
+AVANT=get_SSPZ_from_polynomials([x,y])
+plot([AVANT,APRES],nsdiv=40)
+
+S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
+Join=get_SSPZ_from_polynomials([x-x*y+s,y-x*y+2*t])
+plot([Join,AVANT,APRES],nsdiv=20)
 
 typeof(S)
 
@@ -824,11 +1033,6 @@ p1=x^3 -0.5*x^2+0.5
 p2=y^3 -0.5*y^2+0.5
 
 
-q1=1/20*x + 0.4 
-q2=1/20*y+0.40
-
-t=x^3
-t1=x+1
 function testdegre(n::Int64,pol,qol,q1,q2)
     for i in 1:n
         #println(q1)
@@ -844,57 +1048,9 @@ function testdegre(n::Int64,pol,qol,q1,q2)
     return q1
 end
 
-g1=x^3
-g2=y^3
-h1=x+1
-h2=y+1
-
-k=testdegre(6,p1,p2,q1,q2)
-length(k)
-k=testdegre(9,p1,p2,q1,q2)
-length(k)
-
-affiche_polynomes(k)
 
 
-h=p1([q1,q2])
-h=h(q1,q2)
 
-p1=evaluate(p1,[q1,q2])
-p1=evaluate(p1,[q1,q2])
-
-lli=[1,5,6,7]
-lli[end]
-
-push!(lli,9)
-lli[end]
-Dep=get_SSPZ_from_polynomials([1/20*x + 0.4 ,1/20*y+0.40])
-SP1=poly_apply_on_SSPZ(Dep,[p1,p2],R)
-SP1=barycentre_union(Dep,SP1,R)
-liste=get_polynomials_from_SSPZ(SP1,R)
-affiche_liste(liste)
-SP1.E
-SP1.G
-SP1.c
-
-P1=SimpleSPZ_to_SPZ(SP1)
-SP1=SPZ_to_SimpleSPZ(P1)
-SP1.E
-SP1.G
-SP1.c
-
-
-    #p2=x*y^2
-p4=3/5*p1+4/5*p2
-p5=(-4/5)*p1+3/5*p2
-
-p6=(3/5*x +4/5*y)^3 -0.5*(3/5*x +4/5*y)^2+0.5
-p7=((-4/5)*x+3/5*y)^3 -0.5*((-4/5)*x+3/5*y)^2+0.5
-
-n=2
-G=Array{Float64}(undef,n,0)
-G=hcat(G,[1., 9.12])
-G=hcat(G,[1., 9.12])
 
 P1=get_SSPZ_from_polynomials([p6,p7])
 P2=get_SSPZ_from_polynomials([p1,p2])
@@ -903,7 +1059,7 @@ SPZ1=get_SSPZ_from_polynomials([x,y])
 SPZ2=get_SSPZ_from_polynomials([x+3,-y+3])
 plot([SPZ1,SPZ2])
 SPZ3=barycentre_union(SPZ1,SPZ2,R)
-plot_sampling(SPZ3,R,"Documents/julia/plots_julia/pasconvexhull")
+plot_sampling(SPZ3,R,"Documents/julia/plots_julia/pasconvexhull")=#
 
 
 
