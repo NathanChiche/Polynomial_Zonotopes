@@ -3,13 +3,17 @@ using LazySets
 using Plots
 using Random
 using Dates
+using TimerOutputs
 
 include("conversions.jl")
 include("joins.jl")
 include("plotsample.jl")
 include("polynomap.jl")
+include("matlabmatrix.jl")
 
-function main()
+const to = TimerOutput();
+
+@timeit to function main()
     R=RealField()
     S,(x,y)=PolynomialRing(R,["x","y"])
 
@@ -54,7 +58,8 @@ function main()
 
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,4,2,R,"zono",max_order=25000000)
+    fin=iterate_polynomials_over_PZ([henon1,henon2],PHenon,6,1,R,"bary",max_order=40,power=1)
+
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
@@ -67,9 +72,8 @@ function main()
     println("degré maximal à la fin: ",maximum(som))
     #affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    plot_multiple(fin,R,"Documents/julia/plots_julia/chatal^1_4iter_joinzonoraffine2_30000pts_max_order=40000000bis",nbpoints=30000)
-    #plot_sampling(fini,R,"Documents/julia/plots_julia/Parillo^1_4iter_joinbary_100000pts_",nbpoints=100000)
-    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire^1_4iter_joinbary1_40000pts_max_order=25_x-2_y+1",nbpoints=40000)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire^1_4iter_joinbarmatriciel1_30000pts_max_order=40000000bis",nbpoints=30000)
+    #plot_sampling(fini,R,"Documents/julia/plots_julia/Chatala^1_3iter_joinzono1_100000pts_",nbpoints=100000)
     
     #derniere=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
 
@@ -78,11 +82,48 @@ function main()
     elapsed = end_time2 - end_time
     println("temps de plot:", elapsed)
 
-    
+    MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/Henon_6iter_zono1_doublereduc50.txt")
     
 
     return fini
     #return derniere
-
 end
+R=RealField()
 r=main()
+PZ_reduc=SimpletoSPZ(r)
+RED=reduce_order(PZ_reduc,50)
+rb=SPZ_to_SimpleSPZ(RED)
+plot_sampling(rb,R,"Documents/julia/plots_julia/Henonreduit50_6iter_joinbary1_100000pts_",nbpoints=100000)
+plot_sampling(r,R,"Documents/julia/plots_julia/Henon_6iter_joinbary1_100000pts_",nbpoints=100000)
+r.E
+r.G
+G
+MatlabMatrix(r,"Documents/julia/Traduct_Matlab/Chatala^2_3iter_joinbary0_noreduc.txt")
+
+
+
+
+R=RealField()
+S,(x,y)=PolynomialRing(R,["x","y"])
+
+Trian2=get_SSPZ_from_polynomials([x*y,x])
+Trian4=get_SSPZ_from_polynomials([x*y,-x])
+Trian5=barycentric_join(Trian2,Trian4,3)
+
+#plot(Trian6,nsdiv=30)
+
+Trian5.G
+Trian5.E
+Trian5.c
+Trian6=remove_redundant_generators(Trian5)
+Trian6.G
+Trian6.E
+Trian6.c
+Trian5.G
+
+Trian5=poly_apply_on_SSPZ(Trian5,[x^2+y,2*x],R)
+Trian5.G
+
+pol=get_polynomials_from_SSPZ(r,R)
+[inf_and_sup(pol[1]),inf_and_sup(pol[2])]
+to

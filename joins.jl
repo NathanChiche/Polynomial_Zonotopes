@@ -214,17 +214,45 @@ function barycentric_join(SSPZ1,SSPZ2,field)
     E2=SSPZ2.E
     c1=SSPZ1.c
     c2=SSPZ2.c
-    n1=size(E1)[2]
-    n2=size(E2)[2]
+    m1,n1=size(E1)
+    m2,n2=size(E2)
+    m=max(m1,m2)
     center=ones(Int64,1,2)
     e1=zeros(Int64,1,n1)
     e_1=ones(Int64,1,n1)
     e2=zeros(Int64,1,n2)
     e_2=ones(Int64,1,n2)
     vecnew=hcat(center,e1,e_1,e2,e_2)
-    nlines=size(E1)[1]
-    t1=zeros(Int64,nlines,2)
-    #Redundant=SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew))
-
-    return remove_redundant_generators(SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew)))
+    if m2>m1
+        adjustment=zeros(Int64,m2-m1,n1)
+        E1=vcat(E1,adjustment)
+    elseif m1>m2
+        adjustment=zeros(Int64,m1-m2,n2)
+        E2=vcat(E2,adjustment)
+    end
+    t1=zeros(Int64,m,2)
+    Redundant=SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew))
+    res=remove_redundant_generators(Redundant)
+    return remove_redundant_generators(res)#on remove deux fois car sinon le premier remove peut donner des colonnes nulles dans G
 end
+
+
+
+#=using LazySets
+using Nemo
+
+R=RealField()
+S,(x,y)=PolynomialRing(R,["x","y"])
+include("polynomap.jl")
+
+chatal1= x^2*y^2
+chatal2=x^2
+
+P=get_SSPZ_from_polynomials([x,y]);P=poly_apply_on_SSPZ(P,[chatal1,chatal2],R)
+P=poly_apply_on_SSPZ(P,[chatal1,chatal2],R)
+P.E
+P3.E
+P4=union_pol_zono(P2,P3,R)
+P4.G
+P4.E
+P4.c=#

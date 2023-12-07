@@ -1,23 +1,5 @@
 
-#using TimerOutputs
-
-function get_monomials_from_expmat(expmat::Matrix{Int64},anneau)#sert probablement à rien
-    monomials=[]
-    for i in 1:size(expmat)[2]
-        m=1
-        for j in 1:size(expmat)[1]
-            m=m*gens(anneau)[j]^expmat[j,i]
-        end
-        if m==1
-            append!(monomials,[0])
-        else
-            append!(monomials,[m])
-        end
-    end
-    return monomials
-end    
-
-function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)
+function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)#checked
 
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
     c=LazySets.center(PZ)
@@ -93,28 +75,43 @@ end
 
 function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
     dim,nb_indep=size(PZ.GI)
-    
+    @assert dim==length(PZ.c) "erreur delogique avec la dimension"
     z=zeros(Float64,dim,nb_indep)
-    if z==PZ.GI
+    if nb_indep==0 || z==PZ.GI
         return SimpleSparsePolynomialZonotope(PZ.c,PZ.G,PZ.E)
     end
-    println("Mauvaise partie")
-    z=zeros(Int64,nb_indep)
+    println("Mauvaise partie CONVERSION GI NON VIDE")
     Gnew=hcat(PZ.G,PZ.GI)
-    n=size(PZ.E)[1]
-    Enew=Array{Int64}(undef,nb_indep+n,0)
+    n,m=size(PZ.E)
+    Z=zeros(Int64,nb_indep,m)
+    Enew=vcat(PZ.E,Z)
     
     v=zeros(Int64,nb_indep+n)
-    for i in 1:size(PZ.E)[2]
-        #println(size(Enew)[1])
-        #println(size(PZ.E)[1])
-        Enew=hcat(Enew,vcat(PZ.E[:,i],z))
-    end
+    v_temp=zeros(Int64,nb_indep+n)
 
     for j in 1:nb_indep
-        v_temp=v
+        v_temp=copy(v)
         v_temp[n+j]=1
         Enew=hcat(Enew,v_temp)
     end
     return SimpleSparsePolynomialZonotope(PZ.c,Gnew,Enew)
 end
+
+#=z=zeros(Float64,2)
+G=[1.0 2 4; 2 2 2.0]
+E=[1 0 2; 3 2 1; 4 4 4;1 1 1]
+GI=[1 2.0; 2 2.0]
+P=SparsePolynomialZonotope(z,G,GI,E)
+SP=SPZ_to_SimpleSPZ(P)
+SP.c
+SP.G
+P.G
+P.GI
+SP.E
+
+a=2
+b=3
+b=a
+b=b+1
+b
+a=#
