@@ -2,6 +2,7 @@
 function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)#checked
 
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
+    #attention il ne faut pas de termes redondants
     c=LazySets.center(PZ)
     G=genmat(PZ)
     E=expmat(PZ)
@@ -13,7 +14,7 @@ function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Fie
     for i in 1:size(G)[1]
         Polynomes[i]+=c[i]
         for j in 1:size(G)[2]
-            setcoeff!(Polynomes[i],E[:,j] , G[i,j])
+            setcoeff!(Polynomes[i], E[:,j] , G[i,j])
         end
     end
     return Polynomes
@@ -96,22 +97,3 @@ function SPZ_to_SimpleSPZ(PZ::SparsePolynomialZonotope)
     end
     return SimpleSparsePolynomialZonotope(PZ.c,Gnew,Enew)
 end
-
-#=z=zeros(Float64,2)
-G=[1.0 2 4; 2 2 2.0]
-E=[1 0 2; 3 2 1; 4 4 4;1 1 1]
-GI=[1 2.0; 2 2.0]
-P=SparsePolynomialZonotope(z,G,GI,E)
-SP=SPZ_to_SimpleSPZ(P)
-SP.c
-SP.G
-P.G
-P.GI
-SP.E
-
-a=2
-b=3
-b=a
-b=b+1
-b
-a=#

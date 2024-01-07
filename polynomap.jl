@@ -26,10 +26,11 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
     nb_reduc=0
     liste=[PZ]
     if choice=="zono"
-        f=union_pol_zono
+        #f=union_pol_zono
+        f=zonotopic_join
     elseif choice=="bary"
-        f=barycentre_union
-        #f=barycentric_join
+       #f=barycentre_union
+        f=barycentric_join
     else
         print("Le join n'est pas disponible")
         return 0
@@ -74,19 +75,19 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
         println("number of terms/monomials before join/after reduc",size(expmat(fPZ))[2])
         if i>= borne_union
-            PZ=f(PZ_previous,fPZ,field)
+            PZ=f(PZ_previous,fPZ)
         else
             PZ=fPZ
         end
-        
-        PZ_reduc=SimpletoSPZ(PZ)
+
+        #=PZ_reduc=SimpletoSPZ(PZ)
         if Float64(LazySets.order(PZ_reduc))>max_order
             println("voici l'ordre du SSPZ: ",LazySets.order(PZ_reduc))
             PZ_reduc=reduce_order(PZ_reduc,max_order)
             println("ordre après reduction: ",LazySets.order(PZ_reduc))
             nb_reduc=nb_reduc+1
         end
-        PZ=SPZ_to_SimpleSPZ(PZ_reduc)
+        PZ=SPZ_to_SimpleSPZ(PZ_reduc)=#
         println("number of terms/monomials after join ",size(expmat(PZ))[2])
         #println("nb of terms bis p1: ",length(get_polynomials_from_SSPZ(PZ,field)[1]))
         #println("nb of terms bis p2: ",length(get_polynomials_from_SSPZ(PZ,field)[2]))

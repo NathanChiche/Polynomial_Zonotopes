@@ -173,6 +173,69 @@ function union_pol_zono(PZ1,PZ2,field)
     return get_SSPZ_from_polynomials(poly_union)
 end
 
+
+function zonotopic_join(PZ1,PZ2)
+    """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
+    c1=PZ1.c 
+    c2=PZ2.c 
+    functionsPZ1=[]
+    functionsPZ2=[]
+    n1,n2=size(PZ1.G)
+    m1,m2=size(PZ2.G)
+    e1,e2=size(PZ1.E)
+    f1,f2=size(PZ2.E)
+    nbvar=max(e1,f1)
+    #Gnew=zeros(Float64,n1,n2+n1)
+    #Enew=zeros(Int64,n1+e1,e2+n1)
+    Gnew=Matrix{Float64}(undef,n1,0) 
+    Enew=Matrix{Int64}(undef,n1+e1,0) 
+    println(typeof(Gnew))
+    for i in 1:n2
+        for j in 1:m2
+            if PZ1.E[:,i]==PZ2.E[:,j]
+                #Enew[:,i]=vcat(PZ1.E[:,i],zeros(n1))#add the dimension 
+                #Gnew[:,i]=[arg_min(PZ1.G[k,i],PZ2.G[k,j]) for k in 1:n1]
+                Enew=hcat(Enew,vcat(PZ1.E[:,i],zeros(Int64,n1)))
+                Gnew=hcat(Gnew,[Float64(arg_min(PZ1.G[k,i],PZ2.G[k,j])) for k in 1:n1])
+            end
+        end
+    end
+    println(typeof(Gnew))
+    ranges1=[]
+    domain=IntervalBox(-1..1, e1)
+    for i in 1:n1
+        a1(x)=sum(PZ1.G[i,j]*prod(x[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ1.c[i]
+        push!(ranges1,enclose(a1,domain,BranchAndBoundEnclosure()))
+        #println("enclose de la premiere partie :",enclose(a1,domain,BranchAndBoundEnclosure()))
+    end
+    domain=IntervalBox(-1..1, f1)
+    ranges2=[]
+    for i in 1:m1
+        a2(x)=sum(PZ2.G[i,j]*prod(x[k]^PZ2.E[k,j] for k in 1:f1) for j in 1:m2)+PZ2.c[i]
+        push!(ranges2,enclose(a2,domain,BranchAndBoundEnclosure()))
+        #println("enclose de la deuxieme partie :",enclose(a2,domain,BranchAndBoundEnclosure()))
+    end
+    center=zeros(n1)
+    println(typeof(Gnew))
+    for i in 1:n1
+        mini=min(ranges1[i].lo,ranges2[i].lo)
+        maxi=max(ranges1[i].hi,ranges2[i].hi)
+        mid=Float64(1/2*(mini+maxi))
+        center[i]=mid
+        z=zeros(Int64,n1+e1)
+        z[i+e1]=1
+        Enew=hcat(Enew,z)
+        z=zeros(Float64,n1)
+        z[i]=Float64(maxi-mid-sum(abs(Gnew[i,l]) for l in 1:size(Gnew)[2]))
+        println(typeof(z))
+        Gnew=hcat(Gnew,z)
+    end
+
+    return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
+end
+
+
+
 function copy_poly(pol,Anneau)
     """on met le polynome pol dans un anneau multivarié Anneau ssi il est plus grand que parent(pol)"""
     n=length(gens(parent(pol)))
@@ -207,15 +270,11 @@ function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparseP
     return get_SSPZ_from_polynomials(Polynomes)
 end
 
-function barycentric_join(SSPZ1,SSPZ2,field)
-    G1=SSPZ1.G
-    E1=SSPZ1.E
-    G2=SSPZ2.G
-    E2=SSPZ2.E
+function barycentric_join(SSPZ1,SSPZ2)
     c1=SSPZ1.c
     c2=SSPZ2.c
-    m1,n1=size(E1)
-    m2,n2=size(E2)
+    m1,n1=size(SSPZ1.E)
+    m2,n2=size(SSPZ2.E)
     m=max(m1,m2)
     center=ones(Int64,1,2)
     e1=zeros(Int64,1,n1)
@@ -223,36 +282,73 @@ function barycentric_join(SSPZ1,SSPZ2,field)
     e2=zeros(Int64,1,n2)
     e_2=ones(Int64,1,n2)
     vecnew=hcat(center,e1,e_1,e2,e_2)
+    t1=zeros(Int64,m,2)
     if m2>m1
         adjustment=zeros(Int64,m2-m1,n1)
-        E1=vcat(E1,adjustment)
+        #E1=vcat(E1,adjustment)
+        return remove_useless_terms!(
+            SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,
+            hcat(0.5*c1,-0.5*c2,0.5*SSPZ1.G,0.5*SSPZ1.G,0.5*SSPZ2.G,-0.5*SSPZ2.G),
+            vcat(hcat(t1,vcat(SSPZ1.E,adjustment),vcat(SSPZ1.E,adjustment),SSPZ2.E,SSPZ2.E),vecnew))
+        )
     elseif m1>m2
         adjustment=zeros(Int64,m1-m2,n2)
-        E2=vcat(E2,adjustment)
+        #E2=vcat(E2,adjustment)
+        return remove_useless_terms!(
+            SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,
+            hcat(0.5*c1,-0.5*c2,0.5*SSPZ1.G,0.5*SSPZ1.G,0.5*SSPZ2.G,-0.5*SSPZ2.G),
+            vcat(hcat(t1,SSPZ1.E,SSPZ1.E,vcat(SSPZ2.E,adjustment),vcat(SSPZ2.E,adjustment)),vecnew))
+        )
     end
-    t1=zeros(Int64,m,2)
-    Redundant=SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew))
-    res=remove_redundant_generators(Redundant)
-    return remove_redundant_generators(res)#on remove deux fois car sinon le premier remove peut donner des colonnes nulles dans G
+    
+    return remove_useless_terms!(
+        SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,
+        hcat(0.5*c1,-0.5*c2,0.5*SSPZ1.G,0.5*SSPZ1.G,0.5*SSPZ2.G,-0.5*SSPZ2.G),
+        vcat(hcat(t1,SSPZ1.E,SSPZ1.E,SSPZ2.E,SSPZ2.E),vecnew))
+    )
+
+    #Redundant=SimpleSparsePolynomialZonotope(0.5*c1+0.5*c2,hcat(0.5*c1,-0.5*c2,0.5*G1,0.5*G1,0.5*G2,-0.5*G2),vcat(hcat(t1,E1,E1,E2,E2),vecnew))
+    #res=remove_redundant_generators(Redundant) remove 2 fois pour enlever les colonnes nulles
+
+end
+
+function remove_useless_terms!(SSPZ)
+    dim=size(SSPZ.G)[2]
+    nb_vars,nb_gens=size(SSPZ.E)
+    cnew = copy(SSPZ.c)
+    visited_exps = Dict{Vector{Int},Int}()
+    toremove=Int[]
+    for i in 1:nb_gens
+        gi=SSPZ.G[:,i]
+        ei=@view SSPZ.E[:,i]
+        if iszero(gi)
+            push!(toremove,i)
+        elseif iszero(ei)
+            cnew+=gi
+            push!(toremove,i)
+        elseif haskey(visited_exps, ei) #repeated exponent
+            @show(SSPZ.G[:,visited_exps[ei]])
+            SSPZ.G[:,visited_exps[ei]]+=gi
+            @show(SSPZ.G[:,visited_exps[ei]])
+            @show(gi)
+            push!(toremove,i)
+        else
+            visited_exps[ei]=i
+        end
+    end
+    for i in 1:nb_gens
+        if iszero(@view SSPZ.G[:,i])
+            push!(toremove,i)
+        end
+    end
+    @show(SSPZ.G)
+    return SimpleSparsePolynomialZonotope(cnew,
+    SSPZ.G[1:end,setdiff(1:end,toremove)],
+    SSPZ.E[1:end,setdiff(1:end,toremove)])
 end
 
 
 
-#=using LazySets
-using Nemo
 
-R=RealField()
-S,(x,y)=PolynomialRing(R,["x","y"])
-include("polynomap.jl")
 
-chatal1= x^2*y^2
-chatal2=x^2
 
-P=get_SSPZ_from_polynomials([x,y]);P=poly_apply_on_SSPZ(P,[chatal1,chatal2],R)
-P=poly_apply_on_SSPZ(P,[chatal1,chatal2],R)
-P.E
-P3.E
-P4=union_pol_zono(P2,P3,R)
-P4.G
-P4.E
-P4.c=#
