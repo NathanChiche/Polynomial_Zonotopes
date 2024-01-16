@@ -11,6 +11,7 @@ using RangeEnclosures
 using IntervalArithmetic
 using ForwardDiff
 using IntervalOptimisation
+using LinearAlgebra
 #using TaylorModels
 using SumOfSquares
 #using AffineArithmetic
@@ -22,10 +23,10 @@ include("joins.jl")
 include("plotsample.jl")
 include("polynomap.jl")
 include("matlabmatrix.jl")
+include("reduction.jl")
 
 const to = TimerOutput();
 list=Int[]
-
 
 
 function main()
@@ -142,12 +143,67 @@ G
 MatlabMatrix(r,"Documents/julia/Traduct_Matlab/Chatala^2_3iter_joinbary0_noreduc.txt")
 
 
+P1=SparsePolynomialZonotope([0 , 0.0],[3 2.5 2.0 2 2 2; 2 1.0 0 1.3 1 1],[0.0 0.0 ; 0.0 0],[2 1 1 1 1 2; 4 1 0 3 3 3])
+SP1=SPZ_to_SimpleSPZ(P1)
 
+
+SP1=SimpleSparsePolynomialZonotope([0 , 0.0],[3 2.5 2.0 2 2 2 2 1 0 0.2; 2 1.0 0 1.3 1 1 3 1 1 1],[2 1 1 1 1 2 1 2 0 1; 4 1 0 3 3 3 4 2 1 7])
+size(SP1.G)
+SP1=remove_useless_terms!(SP1)
+size(SP1.G)
+RSP1=Simple_reduce_order(SP1,3)
+RSP2=Simple_reduce_order(SP1,3,nor=1)
+RSP1==RSP2
+@show(RSP1.G)
+@show(RSP2.G)
+@show(RSP1.E)
+@show(RSP2.E)
+plot([RSP2,RSP1],nsdiv=20)
+plot_multiple([RSP1,RSP2,SP1],R,"Documents/julia/plots_julia/deuxreductions",nbpoints=100000)
+G=SP1.G
+n=norm
+norms = [n(g) for g in eachcol(G)]
+norms2=[norm_combination(g) for g in eachcol(G)]
+
+@show(SP1.G)
+@show(RSP1.G)
+@show(SP1.E)
+@show(RSP1.E)
+get_polynomials_from_SSPZ(SP1,R)
+get_polynomials_from_SSPZ(RSP1,R)
+
+plot
+RP1=reduce_order(P1,2)
+plot(RP1)
+plot(P1,nsdiv=20,parti)
+plot(SP1)
+
+include("deuxieme.jl")
+
+LazySets.center(SP1)
+ZO=Zonotope([0 , 0.0],[1 2.0 2 2 2; 1.0 0 1 1 1])
+LazySets.center(ZO)
+ZO.generators
+ZO.center
+reduce_order(P1,2)
+typeof(LazySets.GIR05())
+a=LazySets.GIR05()
+subtypes(AbstractReductionMethod)
+function looping(Z,method=LazySets.GIR05())
+    for i in 1:10000
+        reduce_order(Z,1,method)
+    end
+    return Z
+end
+
+ProfileView.@profview looping(ZO)
 
 R=RealField()
 S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
 
 Trian2=get_SSPZ_from_polynomials([x*y,x])
+overapproximate(Trian2, Zonotope)
+norm(Trian2.G[:,1])
 
 Trian3=get_SSPZ_from_polynomials([-x*y+3,-x+3])
 Trian4=get_SSPZ_from_polynomials([-s*t+3,-s+3])
@@ -171,3 +227,6 @@ n1,n2=size(Test1.G)
 e1,e2=size(Test1.E)
 a1(x)=sum(Test1.G[2,j]*prod(x[k]^Test1.E[k,j] for k in 1:e1) for j in 1:n2)+Test1.c[2]
 a1([1,1])
+
+norm([1,1])
+sqrt(2)
