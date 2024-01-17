@@ -25,7 +25,6 @@ function bernsteinmulti_from_univariates(monomial,maxdeg,domain,indexlist)
     coeffs=Vector{Float64}(undef,nb_coeffs)
      for i in 1:length(indexlist)
         coeffs[i]=prod(ll[j][indexlist[i][j]] for j in 1:len)
-        
     end
 end
 
