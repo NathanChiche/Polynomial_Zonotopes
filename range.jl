@@ -14,6 +14,8 @@ f2(16)
 f
 dom = IntervalBox(-1..1, 3)
 enclose(f,dom,BranchAndBoundEnclosure())
+fun=NaturalEnclosure
+enclose(f,dom,fun())
 
 enclose(x -> 1+ 2*x+ x^2, -1 .. 1)
 

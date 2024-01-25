@@ -174,8 +174,19 @@ function union_pol_zono(PZ1,PZ2,field)
 end
 
 
-function zonotopic_join(PZ1,PZ2)
+function zonotopic_joinbis(PZ1,PZ2,solver)
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
+
+    if solver=="NaturalEnclosure"
+        sol=NaturalEnclosure()
+    elseif solver=="BranchAndBoundEnclosure"
+        sol=BranchAndBoundEnclosure()
+    elseif solver=="TaylorModel"
+        sol=TaylorModelsEnclosure()
+    elseif solver=="SumOfSquares"
+        sol=SumOfSquaresEnclosure()
+    end
+
     c1=PZ1.c 
     c2=PZ2.c 
     functionsPZ1=[]
@@ -205,14 +216,14 @@ function zonotopic_join(PZ1,PZ2)
     domain=IntervalBox(-1..1, e1)
     for i in 1:n1
         a1(x)=sum(PZ1.G[i,j]*prod(x[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ1.c[i]
-        push!(ranges1,enclose(a1,domain,BranchAndBoundEnclosure()))
+        push!(ranges1,enclose(a1,domain,sol))
         #println("enclose de la premiere partie :",enclose(a1,domain,BranchAndBoundEnclosure()))
     end
     domain=IntervalBox(-1..1, f1)
     ranges2=[]
     for i in 1:m1
         a2(x)=sum(PZ2.G[i,j]*prod(x[k]^PZ2.E[k,j] for k in 1:f1) for j in 1:m2)+PZ2.c[i]
-        push!(ranges2,enclose(a2,domain,BranchAndBoundEnclosure()))
+        push!(ranges2,enclose(a2,domain,sol))
         #println("enclose de la deuxieme partie :",enclose(a2,domain,BranchAndBoundEnclosure()))
     end
     center=zeros(n1)
@@ -233,6 +244,65 @@ function zonotopic_join(PZ1,PZ2)
 
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 end
+
+R=RealField()
+
+function zonotopic_join(PZ1,PZ2,solver)
+    """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
+    if solver!="bernstein"
+        return zonotopic_joinbis(PZ1,PZ2,solver)
+    end
+    c1=PZ1.c 
+    c2=PZ2.c 
+    functionsPZ1=[]
+    functionsPZ2=[]
+    n1,n2=size(PZ1.G)
+    m1,m2=size(PZ2.G)
+    e1,e2=size(PZ1.E)
+    f1,f2=size(PZ2.E)
+    nbvar=max(e1,f1)
+    #Gnew=zeros(Float64,n1,n2+n1)
+    #Enew=zeros(Int64,n1+e1,e2+n1)
+    Gnew=Matrix{Float64}(undef,n1,0) 
+    Enew=Matrix{Int64}(undef,n1+e1,0) 
+    println(typeof(Gnew))
+    for i in 1:n2
+        for j in 1:m2
+            if PZ1.E[:,i]==PZ2.E[:,j]
+                #Enew[:,i]=vcat(PZ1.E[:,i],zeros(n1))#add the dimension 
+                #Gnew[:,i]=[arg_min(PZ1.G[k,i],PZ2.G[k,j]) for k in 1:n1]
+                Enew=hcat(Enew,vcat(PZ1.E[:,i],zeros(Int64,n1)))
+                Gnew=hcat(Gnew,[Float64(arg_min(PZ1.G[k,i],PZ2.G[k,j])) for k in 1:n1])
+            end
+        end
+    end
+
+    domain=IntervalBox(-1..1, e1)
+    ranges1=ranges_from_Bernsteincoeff(PZ1.G,PZ1.E,domain)
+    
+    domain=IntervalBox(-1..1, f1)
+    ranges2=ranges_from_Bernsteincoeff(PZ2.G,PZ2.E,domain)
+
+    center=zeros(n1)
+    
+    for i in 1:n1
+        mini=min(ranges1[i][1],ranges2[i][1])
+        maxi=max(ranges1[i][2],ranges2[i][2])
+        mid=Float64(1/2*(mini+maxi))
+        center[i]=mid
+        z=zeros(Int64,n1+e1)
+        z[i+e1]=1
+        Enew=hcat(Enew,z)
+        z=zeros(Float64,n1)
+        z[i]=Float64(maxi-mid-sum(abs(Gnew[i,l]) for l in 1:size(Gnew)[2]))
+        println(typeof(z))
+        Gnew=hcat(Gnew,z)
+    end
+
+    return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
+end
+
+
 
 
 

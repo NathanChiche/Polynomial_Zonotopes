@@ -20,27 +20,13 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
     return get_SSPZ_from_polynomials(composit)
 end
 
-function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1)
+function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,solver="bernstein")
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     i=0
     nb_reduc=0
     liste=[PZ]
-    if choice=="zono"
-        #f=union_pol_zono
-        f=zonotopic_join
-    elseif choice=="bary"
-       #f=barycentre_union
-        f=barycentric_join
-    else
-        print("Le join n'est pas disponible")
-        return 0
-    end
+    
     while i<nb_iter
-        #=if i%2==0
-            f=barycentre_union
-        else 
-            f=union_pol_zono
-        end =#
         
         println(i)
         println("nb variables PZ: ",size(PZ.E)[1])
@@ -53,14 +39,8 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         #println("nb variables PZ_interm: ",size(fPZ.E)[1])
         println("nombre de termes avant la réduction/après fonctionnelle: ",size(fPZ.E)[2])
         #polytest1=get_polynomials_from_SSPZ(fPZ,field)
-        PZ_reduc=SimpletoSPZ(fPZ)
-        if Float64(LazySets.order(PZ_reduc))>max_order
-            println("voici l'ordre du SSPZ: ",LazySets.order(PZ_reduc))
-            PZ_reduc=reduce_order(PZ_reduc,max_order)
-            println("ordre après reduction: ",LazySets.order(PZ_reduc))
-            nb_reduc=nb_reduc+1
-        end
-        fPZ=SPZ_to_SimpleSPZ(PZ_reduc)
+        
+        fPZ=Simple_reduce_order(fPZ,max_order)
         #polytest2=get_polynomials_from_SSPZ(fPZ,field)
 
         #=if nb_reduc==0 && polytest1!=polytest2
@@ -75,7 +55,11 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         #plot_sampling(PZ_interm,field,filename*string(i)*".png")
         println("number of terms/monomials before join/after reduc",size(expmat(fPZ))[2])
         if i>= borne_union
-            PZ=f(PZ_previous,fPZ)
+            if choice=="zono"
+                PZ=zonotopic_join(PZ_previous,fPZ,solver)
+            else
+                PZ=barycentric_join(PZ_previous,fPZ)
+            end
         else
             PZ=fPZ
         end

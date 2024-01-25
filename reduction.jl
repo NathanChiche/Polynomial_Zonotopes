@@ -11,11 +11,21 @@ function Simple_reduce_order(P::SimpleSparsePolynomialZonotope, r::Real,
     
     c=P.c
     G=P.G 
-    E=P.E  
     n,h=size(G) #h is the number of generators
+    println("ICI L ORDRE: ",h//n)
+    if h//n<=r 
+
+        return P
+    end
+    E=P.E  
+    
+
 
 
     a = max(0, min(h , ceil(Int, h - n * (r - 1))))
+    if a==0
+        return P
+    end
     #Gbar = hcat(G, GI)
     if nor==2
         norms = [norm(g) for g in eachcol(G)]

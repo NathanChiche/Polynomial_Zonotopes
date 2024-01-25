@@ -12,6 +12,9 @@ using IntervalArithmetic
 using ForwardDiff
 using IntervalOptimisation
 using LinearAlgebra
+using DynamicPolynomials
+using BernsteinExpansions
+using TaylorModels
 #using TaylorModels
 using SumOfSquares
 #using AffineArithmetic
@@ -24,10 +27,9 @@ include("plotsample.jl")
 include("polynomap.jl")
 include("matlabmatrix.jl")
 include("reduction.jl")
+include("bernstein.jl")
 
 const to = TimerOutput();
-list=Int[]
-
 
 function main()
     R=RealField()
@@ -74,12 +76,12 @@ function main()
 
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,6,1,R,"bary",max_order=5000000,power=1)
+    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,11,1,R,"zono",max_order=5000000,power=1,solver="bernstein")
 
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
-    fin=reverse(fin)
+    #fin=reverse(fin)
     fini=fin[end]
     println("nombre de variables à la fin: ",size((fini).E)[1])
     println("nombre de monomes à la fin: ",size(fini.E)[2])
@@ -105,9 +107,13 @@ function main()
     #return derniere
 end
 r=main()
+
 r.E
 
+Expo = [1 0 2; 0 1 0]
 
+tup=(1,3)
+enumerate(tup)
 
 ProfileView.@profview main()
 #Profile.clear()
@@ -115,6 +121,14 @@ ProfileView.@profview main()
 #Profile.print()
 #pprof()
 @allocations main()
+dom
+
+
+@polyvar s[1:2]
+mono=Monomial(s,[1,2])
+mono2=Monomial(s,[2,2])
+polo=mono+mono2
+ImplicitBernsteinForm(polo,dom)
 
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
@@ -145,7 +159,9 @@ MatlabMatrix(r,"Documents/julia/Traduct_Matlab/Chatala^2_3iter_joinbary0_noreduc
 
 P1=SparsePolynomialZonotope([0 , 0.0],[3 2.5 2.0 2 2 2; 2 1.0 0 1.3 1 1],[0.0 0.0 ; 0.0 0],[2 1 1 1 1 2; 4 1 0 3 3 3])
 SP1=SPZ_to_SimpleSPZ(P1)
-
+x
+SP1.E
+list=[Monomial(x, SP1.E[:,i]) for i in 1:2]
 
 SP1=SimpleSparsePolynomialZonotope([0 , 0.0],[3 2.5 2.0 2 2 2 2 1 0 0.2; 2 1.0 0 1.3 1 1 3 1 1 1],[2 1 1 1 1 2 1 2 0 1; 4 1 0 3 3 3 4 2 1 7])
 size(SP1.G)
@@ -171,6 +187,8 @@ norms2=[norm_combination(g) for g in eachcol(G)]
 @show(RSP1.E)
 get_polynomials_from_SSPZ(SP1,R)
 get_polynomials_from_SSPZ(RSP1,R)
+
+
 
 plot
 RP1=reduce_order(P1,2)
