@@ -28,53 +28,45 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
     
     while i<nb_iter
         
+        
         println(i)
         println("nb variables PZ: ",size(PZ.E)[1])
         fPZ=liste[end]
         PZ_previous=fPZ
+        
         for p in 1:power 
             fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
-            
         end
+        println("number of terms after the composition: ",size(fPZ.E)[2])
         #println("nb variables PZ_interm: ",size(fPZ.E)[1])
-        println("nombre de termes avant la réduction/après fonctionnelle: ",size(fPZ.E)[2])
+        #println("nombre de termes avant la réduction/après fonctionnelle: ",size(fPZ.E)[2])
         #polytest1=get_polynomials_from_SSPZ(fPZ,field)
         
-        fPZ=Simple_reduce_order(fPZ,max_order)
         #polytest2=get_polynomials_from_SSPZ(fPZ,field)
 
         #=if nb_reduc==0 && polytest1!=polytest2
-            affiche_liste(polytest1)
-            affiche_liste(polytest2)
             println("LOUPE")
-            @show(polytest1)
-            @show(polytest2)
             return liste
         end=#
 
-        #plot_sampling(PZ_interm,field,filename*string(i)*".png")
-        println("number of terms/monomials before join/after reduc",size(expmat(fPZ))[2])
+        #println("number of terms/monomials before join/after reduc",size(expmat(fPZ))[2])
         if i>= borne_union
             if choice=="zono"
                 PZ=zonotopic_join(PZ_previous,fPZ,solver)
+                PZ=remove_unused_variables(PZ)
             else
                 PZ=barycentric_join(PZ_previous,fPZ)
+                #PZ=remove_useless_terms!(PZ) PAS BESOIN PUISQUE CEST DEJA DANS LE JOIN
             end
         else
             PZ=fPZ
         end
-
-        #=PZ_reduc=SimpletoSPZ(PZ)
-        if Float64(LazySets.order(PZ_reduc))>max_order
-            println("voici l'ordre du SSPZ: ",LazySets.order(PZ_reduc))
-            PZ_reduc=reduce_order(PZ_reduc,max_order)
-            println("ordre après reduction: ",LazySets.order(PZ_reduc))
-            nb_reduc=nb_reduc+1
-        end
-        PZ=SPZ_to_SimpleSPZ(PZ_reduc)=#
         println("number of terms/monomials after join ",size(expmat(PZ))[2])
-        #println("nb of terms bis p1: ",length(get_polynomials_from_SSPZ(PZ,field)[1]))
-        #println("nb of terms bis p2: ",length(get_polynomials_from_SSPZ(PZ,field)[2]))
+        if size(PZ.G)[2]>=max_order
+            PZ=Simple_reduce_order(PZ,max_order)
+            nb_reduc+=1
+        end
+        println("number of terms after reduction: ",size(PZ.E)[2])
         i+=1
         push!(liste,PZ)
     end

@@ -14,11 +14,12 @@ using IntervalOptimisation
 using LinearAlgebra
 using DynamicPolynomials
 using BernsteinExpansions
-using TaylorModels
 #using TaylorModels
-using SumOfSquares
+#using SumOfSquares
 #using AffineArithmetic
 #using ProfileVega
+
+
 
 Profile.init(delay=0.01)
 include("conversions.jl")
@@ -41,11 +42,20 @@ function main()
     p6=(3/5*x +4/5*y)^3 -0.5*(3/5*x +4/5*y)^2+0.5
     p7=((-4/5)*x+3/5*y)^3 -0.5*((-4/5)*x+3/5*y)^2+0.5
 
+    p8=1/5*(3/5*x +4/5*y)^2
+    p9=1/5*((-4/5)*x+3/5*y)^2
+
+    g1=3/5*(0.4*x^2) - 4/5*(0.6*y^2)
+    g2= -4/5*(0.4*x^2) + 3/5*(0.6*y^2)
+
     chatal1= x+y
     chatal2=-0.5952 + x^2
 
-    p8=1/4*x^2+1/2 -y
-    p9=2*y-y^2 + x
+    chatalb1= 3/5*x+ -4/5*y+y^2
+    chatalb2= 3/5*x^2+ 4/5*y
+
+    #p8=1/4*x^2+1/2 -y
+    #p9=2*y-y^2 + x
 
     henon1=1 - 1.4*x^2 + y
     henon2=0.3*x
@@ -66,54 +76,116 @@ function main()
     parillo1= step*(-x+x*y) + x
     parillo2=step*(-y) + y
 
+    #basique1=1/5*(x^2+x*y)
+    #basique2=1/6*(y+x*y)
+
+    basique1bis=1/10*((3/5*x +4/5*y)^2+(3/5*x +4/5*y)*((-4/5)*x+3/5*y))
+    basique2bis=1/12*(((-4/5)*x+3/5*y)+(3/5*x +4/5*y)*((-4/5)*x+3/5*y))
+
+    
+
     PHenon=get_SSPZ_from_polynomials([1/5*x ,1/5*y])
     Pparillo=get_SSPZ_from_polynomials([1/10*x+12 ,1/10*y+2])
     PChatal=get_SSPZ_from_polynomials([1/6*x+1/6 ,1/6*y+1/6])
+    PChatalb=get_SSPZ_from_polynomials([1/6*x+1/3 ,1/6*y+1/3])
     Plineaire=get_SSPZ_from_polynomials([x-2,y+1])
-    P1=get_SSPZ_from_polynomials([x + 3  ,y+4])
+    P1=get_SSPZ_from_polynomials([1/20*x + 0.4 ,1/20*y+0.4])
+    P2=get_SSPZ_from_polynomials([1/5*x + 0.5 ,1/5*y+0.5])
+    P89=get_SSPZ_from_polynomials([1/5*x + 1.5 ,1/5*y+1])
     PVanPol=get_SSPZ_from_polynomials([0.15*x + 1.4  ,0.05*y+2.30])
     Plokta=get_SSPZ_from_polynomials([1/5*x + 5  ,1/5*y+2])
+    Pbasique=get_SSPZ_from_polynomials([1/3*x + 1  ,1/3*y+1])
 
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([chatal1,chatal2],PChatal,11,1,R,"zono",max_order=5000000,power=1,solver="bernstein")
+    fin=iterate_polynomials_over_PZ([lineaire1,lineaire2],Plineaire,6,1,R,"bary",max_order=30,power=2,solver="bernstein")
+    #fin=iterate_polynomials_over_PZ([p6,p7],P2,1,2,R,"bary",max_order=2222,power=1,solver="bernstein")
+
 
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
     #fin=reverse(fin)
     fini=fin[end]
+    fin=reverse(fin)
     println("nombre de variables à la fin: ",size((fini).E)[1])
     println("nombre de monomes à la fin: ",size(fini.E)[2])
     somme=sum(fini.E,dims=1)
     som=vec(somme)
-    println("degré maximal à la fin: ",maximum(som))
-    #affiche_liste(get_polynomials_from_SSPZ(fini,R))
+    println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire^1_4iter_joinzonoBRABOUN1_100000pts_",nbpoints=100000)
-    #plot_sampling(fini,R,"Documents/julia/plots_julia/lineaire^1_4iter_joinzonoBRABOUN1_100000pts_",nbpoints=100000)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/basiquebis5joinbary1_ordre=20",nbpoints=40000)
+    #plot_sampling(fini,R,"Documents/julia/plots_julia/chatal^1_4iter_joinbarymatriciel1_maxorder=50_100000pts_",nbpoints=100000)
     
     #derniere=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
 
     #plot_multiple([derniere,fini],R,"Documents/julia/plots_julia/lineaire^1_5iter_joinbary0_Inclusion?_1000000pt",nbpoints=1000000)
+    
+
+    MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/fini_lineaire^2_6iter_bary1_reduc30.txt","flinp2_6") 
+    next=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
+    next=poly_apply_on_SSPZ(next,[lineaire1,lineaire2],R)
+    MatlabMatrix(next,"Documents/julia/Traduct_Matlab/next_lineaire^2_6iter_bary1_reduc30.txt","nlinp2_6") 
     end_time2 = now()
     elapsed = end_time2 - end_time
     println("temps de plot:", elapsed)
-
-    #MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/Henon_6iter_zono1_doublereduc50.txt")
     
 
-    return fini
+    return fini,next
     #return derniere
 end
-r=main()
+@time r=main()
+r[1].E
+plot_multiple(r,R,"Documents/julia/plots_julia/rotationbisfin+next4joinbary1_ordre=60nojoin",nbpoints=40000)
+chatalb1= 3/5*x+ -4/5*y+y^2
+    chatalb2= 3/5*x^2+ 4/5*y
+rb=poly_apply_on_SSPZ(r,[chatalb1,chatalb2],R)
+
+
+rbj=zonotopic_join(r,rb,"bernstein")
+r.c
+rb2=zonotopic_join(r,rb,"BranchAndBoundEnclosure")
+rb3=zonotopic_join(r,rb,"NaturalEnclosure")
+
+plot_multiple([rbj,r,rb],R,"Documents/julia/plots_julia/testsjoinpluscentre")
+plot_multiple([rb2,r,rb],R,"Documents/julia/plots_julia/testsjoinbranch")
+
+box=SimpleSparsePolynomialZonotope([0, 0.],[1 0;0 1.],[1 0;0 1])
+box2=SimpleSparsePolynomialZonotope([5, 3.],[2 0;0 1.],[1 0;0 1])
+box3=zonotopic_join(box,box2,"bernstein")
+box4=zonotopic_join(box,box2,"BranchAndBoundEnclosure")
+box3.G
+plot_multiple([box3,box2,box],R,"Documents/julia/plots_julia/testjoincasbasedecal")
+
+
+
+
+S1=SimpleSparsePolynomialZonotope([0 , 0.],[1 1 0 0 0; 0 0 1 1 1.],[2 0 3 0 1;1 1 2 2 0])
+plot_sampling(S1,R,"Documents/julia/plots_julia/S1")
+S2=SimpleSparsePolynomialZonotope([0 , 0.],[1 0.5 0 0 ; 0 0 1 2],[1 0 3 1; 0 1 2 0 ])
+S2=remove_useless_terms!(S2)
+S2=SimpleSparsePolynomialZonotope([0 , 0.],[1 0.5 0 ; 2 0 1],[1 0 3; 0 1 2 ])
+plot_sampling(S2,R,"Documents/julia/plots_julia/S2")
+
+
+
+get_polynomials_from_SSPZ(S2,R)
+
+S3=zonotopic_join(S1,S2,"bernstein")
+get_polynomials_from_SSPZ(S3,R)
+plot_multiple([S4,S1,S2],R,"Documents/julia/plots_julia/S4S2S1")
+S4=barycentric_join(S1,S2)
+plot_sampling(S4,R,"Documents/julia/plots_julia/S4")
+
+
+rred=Simple_reduce_order(r,50)
+rred.E
+plot_multiple([rred,r],R,"Documents/julia/plots_julia/test_reductionoversimple_")
 
 r.E
+rb=remove_unused_variables(r)
+rb.E
 
-Expo = [1 0 2; 0 1 0]
-
-tup=(1,3)
-enumerate(tup)
 
 ProfileView.@profview main()
 #Profile.clear()
@@ -121,20 +193,15 @@ ProfileView.@profview main()
 #Profile.print()
 #pprof()
 @allocations main()
-dom
 
-
-@polyvar s[1:2]
-mono=Monomial(s,[1,2])
-mono2=Monomial(s,[2,2])
-polo=mono+mono2
-ImplicitBernsteinForm(polo,dom)
 
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
 using BernsteinExpansions
 using IntervalArithmetic
 dom = IntervalBox(-1..1, 2)
+
+
 
 chatal1= x+y
 enclose(chatal1,dom)
@@ -245,6 +312,3 @@ n1,n2=size(Test1.G)
 e1,e2=size(Test1.E)
 a1(x)=sum(Test1.G[2,j]*prod(x[k]^Test1.E[k,j] for k in 1:e1) for j in 1:n2)+Test1.c[2]
 a1([1,1])
-
-norm([1,1])
-sqrt(2)

@@ -84,7 +84,7 @@ function even_exponent(expo::Vector{Int64})
     return true
 end
 
-function inf_and_supbis(polynomial)
+function inf_and_sup(polynomial)
     exponents=collect(exponent_vector(polynomial,i) for i in 1:length(polynomial))
     l=length(exponents[1])
     zero=zeros(l)
@@ -99,7 +99,7 @@ function inf_and_supbis(polynomial)
     return [inf,sup]
 end
 
-function inf_and_sup(polynomial)
+function inf_and_supbis(polynomial)
     exponents=collect(exponent_vector(polynomial,i) for i in 1:length(polynomial))
     l=length(exponents[1])
     zero=zeros(l)
@@ -200,7 +200,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)
     #Enew=zeros(Int64,n1+e1,e2+n1)
     Gnew=Matrix{Float64}(undef,n1,0) 
     Enew=Matrix{Int64}(undef,n1+e1,0) 
-    println(typeof(Gnew))
+    #println(typeof(Gnew))
     for i in 1:n2
         for j in 1:m2
             if PZ1.E[:,i]==PZ2.E[:,j]
@@ -211,7 +211,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)
             end
         end
     end
-    println(typeof(Gnew))
+    #println(typeof(Gnew))
     ranges1=[]
     domain=IntervalBox(-1..1, e1)
     for i in 1:n1
@@ -219,6 +219,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)
         push!(ranges1,enclose(a1,domain,sol))
         #println("enclose de la premiere partie :",enclose(a1,domain,BranchAndBoundEnclosure()))
     end
+    println("ranges1: ",ranges1)
     domain=IntervalBox(-1..1, f1)
     ranges2=[]
     for i in 1:m1
@@ -226,8 +227,9 @@ function zonotopic_joinbis(PZ1,PZ2,solver)
         push!(ranges2,enclose(a2,domain,sol))
         #println("enclose de la deuxieme partie :",enclose(a2,domain,BranchAndBoundEnclosure()))
     end
+    println("ranges2: ",ranges2)
     center=zeros(n1)
-    println(typeof(Gnew))
+    #ln(typeof(Gnew))
     for i in 1:n1
         mini=min(ranges1[i].lo,ranges2[i].lo)
         maxi=max(ranges1[i].hi,ranges2[i].hi)
@@ -238,7 +240,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)
         Enew=hcat(Enew,z)
         z=zeros(Float64,n1)
         z[i]=Float64(maxi-mid-sum(abs(Gnew[i,l]) for l in 1:size(Gnew)[2]))
-        println(typeof(z))
+        #println(typeof(z))
         Gnew=hcat(Gnew,z)
     end
 
@@ -265,7 +267,7 @@ function zonotopic_join(PZ1,PZ2,solver)
     #Enew=zeros(Int64,n1+e1,e2+n1)
     Gnew=Matrix{Float64}(undef,n1,0) 
     Enew=Matrix{Int64}(undef,n1+e1,0) 
-    println(typeof(Gnew))
+    #println(typeof(Gnew))
     for i in 1:n2
         for j in 1:m2
             if PZ1.E[:,i]==PZ2.E[:,j]
@@ -279,9 +281,18 @@ function zonotopic_join(PZ1,PZ2,solver)
 
     domain=IntervalBox(-1..1, e1)
     ranges1=ranges_from_Bernsteincoeff(PZ1.G,PZ1.E,domain)
+    for i in 1:n1 #WE HAVE TO ADD THE CENTER TO THE COMPUTED RANGES
+        ranges1[i]=ranges1[i] .+ PZ1.c[i]
+
+    end
+    #println("ranges1: ",ranges1)
     
     domain=IntervalBox(-1..1, f1)
     ranges2=ranges_from_Bernsteincoeff(PZ2.G,PZ2.E,domain)
+    for i in 1:n1
+        ranges2[i]=ranges2[i] .+ PZ2.c[i]
+    end
+    #println("ranges2: ",ranges2)
 
     center=zeros(n1)
     
@@ -289,13 +300,14 @@ function zonotopic_join(PZ1,PZ2,solver)
         mini=min(ranges1[i][1],ranges2[i][1])
         maxi=max(ranges1[i][2],ranges2[i][2])
         mid=Float64(1/2*(mini+maxi))
+        println(mini," ", maxi," ", mid)
         center[i]=mid
         z=zeros(Int64,n1+e1)
         z[i+e1]=1
         Enew=hcat(Enew,z)
         z=zeros(Float64,n1)
         z[i]=Float64(maxi-mid-sum(abs(Gnew[i,l]) for l in 1:size(Gnew)[2]))
-        println(typeof(z))
+        println(z[i])
         Gnew=hcat(Gnew,z)
     end
 
@@ -397,10 +409,10 @@ function remove_useless_terms!(SSPZ)
             cnew+=gi
             push!(toremove,i)
         elseif haskey(visited_exps, ei) #repeated exponent
-            @show(SSPZ.G[:,visited_exps[ei]])
+            #@show(SSPZ.G[:,visited_exps[ei]])
             SSPZ.G[:,visited_exps[ei]]+=gi
-            @show(SSPZ.G[:,visited_exps[ei]])
-            @show(gi)
+            #@show(SSPZ.G[:,visited_exps[ei]])
+            #@show(gi)
             push!(toremove,i)
         else
             visited_exps[ei]=i
@@ -411,7 +423,7 @@ function remove_useless_terms!(SSPZ)
             push!(toremove,i)
         end
     end
-    @show(SSPZ.G)
+    #@show(SSPZ.G)
     return SimpleSparsePolynomialZonotope(cnew,
     SSPZ.G[1:end,setdiff(1:end,toremove)],
     SSPZ.E[1:end,setdiff(1:end,toremove)])

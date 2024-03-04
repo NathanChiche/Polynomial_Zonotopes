@@ -1,9 +1,9 @@
-function MatlabMatrix(SSPZ::SimpleSparsePolynomialZonotope,file)
+function MatlabMatrix(SSPZ::SimpleSparsePolynomialZonotope,file,name)
     c=SSPZ.c 
     E=SSPZ.E 
     G=SSPZ.G 
     open(file, "w") do f
-        write(f, "centre = [")
+        write(f, "centre"*name*" = [")
         for i in 1:length(c)
             if i!=length(c)
                 write(f,"$(c[i]) ;")
@@ -12,7 +12,7 @@ function MatlabMatrix(SSPZ::SimpleSparsePolynomialZonotope,file)
             end
         end
         write(f," \n")
-        write(f, "generateurs = [")
+        write(f, "generateurs"*name*" = [")
         for i in 1:size(G)[1]
             for j in 1:size(G)[2]
                 write(f,"$(G[i,j]) ")
@@ -24,8 +24,10 @@ function MatlabMatrix(SSPZ::SimpleSparsePolynomialZonotope,file)
             end
         end
 
-        write(f, "exposants = [")
+        write(f, "exposants"*name*" = [")
+        println(size(E)[1])
         for i in 1:size(E)[1]
+            
             for j in 1:size(E)[2]
                 write(f,"$(E[i,j]) ")
             end

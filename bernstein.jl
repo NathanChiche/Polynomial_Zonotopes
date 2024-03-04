@@ -14,7 +14,7 @@ end
 
 function monobernsteinmultivar_from_univariatesbis(monomial,maxdeg,domain,indexlist)
     #on obtient dans la liste coeffs les coeffs de Bernstein multivariés pour un monome précis sur un domaine précis
-    
+    println("bis")
     ll=multivariate(monomial,maxdeg,domain)
     nbvar=length(maxdeg)
     nb_coeffs=prod(k+1 for k in maxdeg)
@@ -31,7 +31,7 @@ function monobernsteinmultivar_from_univariates(monomial,maxdeg,domain)
     
     ll=multivariate(monomial,maxdeg,domain)
     
-    coeffs=everyproducts(ll,maxdeg)
+    coeffs=everyproducts(ll)
     return coeffs
 end
 
@@ -84,15 +84,42 @@ function ranges_from_Bernsteincoeff(G,E,domain)
     return ranges
 end
 
-listest=[[1,2,1],[1,2,4]#=,[0,1,3]=#]
+"""listest=[[1,2,1],[1,2,4]#=,[0,1,3]=#]
 listest[1]
 a=[1,2,1]
+prod(b)
 b=[2,2,1]
 [a[i]*b[j] for i in 1:3 for j in 1:3]
 prod(a[i]*b[j] for i in 1:3 for j in 1:3)
 length(listest)
-everyproductsbis(listest)
+everyproductsbis(listest)"""
 
+
+function everyproductscaput(listlist)
+    num=[length(k) for k in listlist]
+    p=prod(num)
+    l=length(listlist)
+    res=zeros(Float64,p)
+    temp=Vector{Vector{Float64}}(undef,l)
+    len=length(listlist[1])
+    #=for c in 1:len
+        temp[1][c]=listlist[1][c]
+    end=#
+    temp[1]=deepcopy(listlist[1])
+    for i in 2:l
+        t=length(listlist[i])
+        for j in 1:len
+            for h in 1:t
+                res[(j-1)*t+h]=temp[i-1][j]*listlist[i][h]
+            end
+        end
+        len=len*t
+        if i<l
+            temp[i]=deepcopy(res)
+        end
+    end
+    return res
+end
 
 function everyproducts(listlist)
     num=prod(length(k) for k in listlist)
@@ -102,7 +129,8 @@ function everyproducts(listlist)
     for c in 1:len
         temp[c]=listlist[1][c]
     end
-    for i in 2:length(listlist)
+    l=length(listlist)
+    for i in 2:l
         t=length(listlist[i])
         for j in 1:len
             for h in 1:t
@@ -110,7 +138,12 @@ function everyproducts(listlist)
             end
         end
         len=len*t
-        temp=deepcopy(res)
+        #recopie de res dans temp
+        if i<l
+            for s in 1:len
+                temp[s]=res[s]
+            end
+        end
     end
     return res
 end
@@ -128,12 +161,23 @@ function everyproductsbis(listlist)
     return res
 end
 
-listest=[[1.0,2,1],[1,2,4],[0,1,2],[1,1,2],[111,123,4134],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2]]
-@time (everyproducts(listest))
-3^12
+
+"""listest=[[1.0,2,1],[1,2,4],[2,4,6,1,77,2],[0,1,2],[1,1,2],[111,123,4134],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[1,3,2,2222222,1]]
+prod(length(k) for k in listest)
+listest=[[1.0,2,1],[1,2],[0,1]]
+tem=Vector{Vector{Float64}}(undef,length(listest))
+tem[1]=deepcopy(listest[1])
+tem[1][2]
+everyproducts(listest)==everyproductsbis(listest)==everyproductscaput(listest)
+@time(everyproductsbis(listest))
+"""
+
 """everyproducts(listest)
 
  #TESTS POUR VERIFIER SI LES COEFFS DE BERNSTEIN SONT BIEN CALCULES
+ using IntervalArithmetic
+ using DynamicPolynomials
+ using BernsteinExpansions
 dom=IntervalBox(-1..1,2)
 G=[1 -1 -1 1; 1 2 3 2]
 length(G)
