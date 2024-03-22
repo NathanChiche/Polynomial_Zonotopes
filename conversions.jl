@@ -1,6 +1,6 @@
 
 function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)#checked
-    
+
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
     #attention il ne faut pas de termes redondants
     c=LazySets.center(PZ)

@@ -27,8 +27,6 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
     liste=[PZ]
     
     while i<nb_iter
-        
-        
         println(i)
         println("nb variables PZ: ",size(PZ.E)[1])
         fPZ=liste[end]
@@ -49,7 +47,6 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
             return liste
         end=#
 
-        #println("number of terms/monomials before join/after reduc",size(expmat(fPZ))[2])
         if i>= borne_union
             if choice=="zono"
                 PZ=zonotopic_join(PZ_previous,fPZ,solver)

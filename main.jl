@@ -50,9 +50,12 @@ function main()
 
     chatal1= x+y
     chatal2=-0.5952 + x^2
+    chatalb1= 1/(1.2)*(x+y)
+    chatalb2=1/(1.2)*(-0.5952 + x^2)
 
-    chatalb1= 3/5*x+ -4/5*y+y^2
-    chatalb2= 3/5*x^2+ 4/5*y
+
+    #chatalb1= 3/5*x+ -4/5*y+y^2
+    #chatalb2= 3/5*x^2+ 4/5*y
 
     #p8=1/4*x^2+1/2 -y
     #p9=2*y-y^2 + x
@@ -76,8 +79,8 @@ function main()
     parillo1= step*(-x+x*y) + x
     parillo2=step*(-y) + y
 
-    #basique1=1/5*(x^2+x*y)
-    #basique2=1/6*(y+x*y)
+    basique1=1/7*(x^2+x*y+x)
+    basique2=1/6*(y+x*y)
 
     basique1bis=1/10*((3/5*x +4/5*y)^2+(3/5*x +4/5*y)*((-4/5)*x+3/5*y))
     basique2bis=1/12*(((-4/5)*x+3/5*y)+(3/5*x +4/5*y)*((-4/5)*x+3/5*y))
@@ -98,7 +101,7 @@ function main()
 
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([lineaire1,lineaire2],Plineaire,6,1,R,"bary",max_order=30,power=2,solver="bernstein")
+    fin=iterate_polynomials_over_PZ([basique1,basique2],Pbasique,6,1,R,"zono",max_order=50,power=1,solver="bernstein")
     #fin=iterate_polynomials_over_PZ([p6,p7],P2,1,2,R,"bary",max_order=2222,power=1,solver="bernstein")
 
 
@@ -114,7 +117,7 @@ function main()
     som=vec(somme)
     println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    #plot_multiple(fin,R,"Documents/julia/plots_julia/basiquebis5joinbary1_ordre=20",nbpoints=40000)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/chatal6joinzono2_ordre=50",nbpoints=40000)
     #plot_sampling(fini,R,"Documents/julia/plots_julia/chatal^1_4iter_joinbarymatriciel1_maxorder=50_100000pts_",nbpoints=100000)
     
     #derniere=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
@@ -122,10 +125,10 @@ function main()
     #plot_multiple([derniere,fini],R,"Documents/julia/plots_julia/lineaire^1_5iter_joinbary0_Inclusion?_1000000pt",nbpoints=1000000)
     
 
-    MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/fini_lineaire^2_6iter_bary1_reduc30.txt","flinp2_6") 
-    next=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
-    next=poly_apply_on_SSPZ(next,[lineaire1,lineaire2],R)
-    MatlabMatrix(next,"Documents/julia/Traduct_Matlab/next_lineaire^2_6iter_bary1_reduc30.txt","nlinp2_6") 
+    MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/fini_basique_6iter_zono1_reduc50.txt","fbas6_1") 
+    next=poly_apply_on_SSPZ(fini,[basique1,basique2],R)
+    next=poly_apply_on_SSPZ(next,[basique1,basique2],R)
+    MatlabMatrix(next,"Documents/julia/Traduct_Matlab/next_basique_6iter_zono1_reduc50.txt","nbas6_1") 
     end_time2 = now()
     elapsed = end_time2 - end_time
     println("temps de plot:", elapsed)
@@ -134,9 +137,11 @@ function main()
     return fini,next
     #return derniere
 end
+
 @time r=main()
-r[1].E
-plot_multiple(r,R,"Documents/julia/plots_julia/rotationbisfin+next4joinbary1_ordre=60nojoin",nbpoints=40000)
+1/(1.1)
+r[2].G
+plot_multiple(r,R,"Documents/julia/plots_julia/basiquebisjoinzono5iter_2_reduc50",nbpoints=40000)
 chatalb1= 3/5*x+ -4/5*y+y^2
     chatalb2= 3/5*x^2+ 4/5*y
 rb=poly_apply_on_SSPZ(r,[chatalb1,chatalb2],R)
