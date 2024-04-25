@@ -11,6 +11,43 @@ function createIndexes(maxdeg)
     return res
 end
 
+ar=createIndexes([2,2])
+
+function list_bernstein_polyn(x,maxdeg,domain)
+    listlist=[]
+    temp=[]
+    for i in 1:length(maxdeg)
+        l=maxdeg[i]
+        up=domain[i].hi
+        lo=domain[i].lo
+        for j in 0:l
+            println(j)
+            push!(temp,(binomial(l,j)/(up-lo)^l)*(up-x[i])^(l-j)*(x[i]-lo)^j)
+        end
+        push!(listlist,temp)
+        temp=[]
+    end
+    return listlist
+end
+
+@polyvar x[1:2]
+po=x[1]*x[2]+1.0x[1]^2
+x.
+length(po)
+typeof(po)
+heh=list_bernstein_polyn(x,[2,1],ab)
+heh
+
+function get_nemopolynomial_from_bernsteincoeffs(liste,maxdeg,domain,indexlist)
+end
+using MultivariatePolynomials
+MultivariatePolynomials.powers(x[1])
+nterms(po)
+for i in po
+    println(i)
+    println(powers(i))
+end
+
 
 function monobernsteinmultivar_from_univariatesbis(monomial,maxdeg,domain,indexlist)
     #on obtient dans la liste coeffs les coeffs de Bernstein multivariés pour un monome précis sur un domaine précis
@@ -25,7 +62,7 @@ function monobernsteinmultivar_from_univariatesbis(monomial,maxdeg,domain,indexl
     end
     return coeffs
 end
-
+Interval(-1..1,2)
 function monobernsteinmultivar_from_univariates(monomial,maxdeg,domain)
     #on obtient dans la liste coeffs les coeffs de Bernstein multivariés pour un monome précis sur un domaine précis
     
@@ -216,3 +253,5 @@ Nt=(Nt...,1:5)
 [I for I in Iterators.product(Nt...)]"""
 
 
+ab=IntervalBox(-1..1,2)
+ab[1].hi

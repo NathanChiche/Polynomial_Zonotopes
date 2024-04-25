@@ -13,6 +13,7 @@ function test()
     P2=get_polynomials_from_SSPZ(P,R)
     return P
 end
-
+Z=SimpleSparsePolynomialZonotope([0.0 , 0], [1.0 1; 0 1],[2 1; 0 1;2 1;2 1;2 1;2 1;2 1;2 1])
+plot(Z,nsdiv=14)
 z=test()
 plot(z)
