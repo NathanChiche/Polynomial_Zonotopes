@@ -466,8 +466,6 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
     c1=PZ1.c 
     dim=length(c1)
     c2=PZ2.c 
-    n1,n2=size(PZ1.G)
-    m1,m2=size(PZ2.G)
     e1,e2=size(PZ1.E)
     f1,f2=size(PZ2.E)
     if (e1!=f1)
@@ -507,16 +505,16 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         
         end
         #on convertit les coeffs h[i] en un vrai polynome polyh
-        @show(coeffs1,h,s)
-        @show(coeffs2,h,t)
+        @show(coeffs1[i],h[i],s)
+        @show(coeffs2[i],h[i],t)
         hbis=polynomial_from_bernstein_coeffs(Anneau,maxdegree,domain,h[i])
         #hbis=copy_poly(h[i],Anneau)
         #on recalcule les polynomes f-h et g-h
         for j in 1:length(coeffs1[i])
-            s[j]=coeffs1[i][j]-h[i][j] .+ PZ1.c[i]
+            s[j]=coeffs1[i][j]-h[i][j] .+ c1[i]
         end
         for j in 1:length(coeffs2[i])
-            t[j]=coeffs2[i][j]-h[i][j] .+ PZ2.c[i]
+            t[j]=coeffs2[i][j]-h[i][j] .+ c2[i]
         end
         #t=coeffs2[i]-h .+ PZ2.c[i]
         mini=min(minimum(s),minimum(t))
@@ -527,7 +525,7 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         #@show(mini,maxi,mid)
         #println(mini," ", maxi," ", mid)
         temp=mid+hbis+(Float64(maxi-mini)/2)*gens(Anneau)[e1+i]
-        @show(typeof(temp))
+        @show(mid,hbis,(maxi-mini)/2,temp)
         push!(res,temp)
     end
     Ph=get_SSPZ_from_polynomials(res)
