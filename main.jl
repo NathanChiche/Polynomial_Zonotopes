@@ -139,6 +139,11 @@ function main()
 end
 
 @time r=main()
+
+
+
+@polyvar x[1:4]
+x[1]
 r[1].G
 R=RealField()
 get_polynomials_from_SSPZ(r[1],R)
@@ -158,6 +163,14 @@ plot_multiple([rb2,r,rb],R,"Documents/julia/plots_julia/testsjoinbranch")
 
 box=SimpleSparsePolynomialZonotope([0, 0.],[1 0;0 1.],[1 0;0 1])
 box2=SimpleSparsePolynomialZonotope([5, 3.],[2 0;0 1.],[1 0;0 1])
+T
+box4=bernstein_zonotopic_join(box,box2,"bernstein",R)
+box5=union_pol_zono(box,box2,R)
+get_polynomials_from_SSPZ(box5,R)
+box4
+typeof(box4[1])
+get_SSPZ_from_polynomials(box4)
+
 box3=zonotopic_join(box,box2,"bernstein")
 box4=zonotopic_join(box,box2,"BranchAndBoundEnclosure")
 box3.G
@@ -203,6 +216,11 @@ ProfileView.@profview main()
 
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
+g=gens(S)
+ze=S(0)
+T,(x,y,z,s)=PolynomialRing(R,["x","y","z","s"])
+zer=T(ze)
+g[1]*g[2]
 using BernsteinExpansions
 using IntervalArithmetic
 dom = IntervalBox(-1..1, 2)

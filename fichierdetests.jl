@@ -1,5 +1,10 @@
 using LazySets
 using Nemo 
+using Plots
+using Random
+using RangeEnclosures
+using DynamicPolynomials
+using BernsteinExpansions
 using IntervalArithmetic
 using IntervalContractors
 
@@ -12,53 +17,67 @@ include("reduction.jl")
 include("bernstein.jl")
 
 
-"""TESTS SUR LES REMOVE REDUNDANT GENERATORS ET LA REDUCTION"""
-SP1=SimpleSparsePolynomialZonotope([0 , 0.0],[ 0 3 2.5 2.0 2 2 2 2 1 0 0.2 3; 2 2 1.0 0 1.3 1 1 3 1 1 1 3],[2 2 1 1 1 1 2 1 2 0 1 3; 5 2 1 0 3 3 3 4 2 1 1 3])
-SP3=deepcopy(SP1)
-SP3.E
-SP3==SP1
-SP2=remove_useless_terms!(SP1)
-plot([SP3,SP1],nsdiv=28)
-plot(SP1,nsdiv=28)
-plot([SP2,SP3],nsdiv=28)
-SP2==SP3
 
-SP2.E
-SP3.G==SP1.G
-
-size(SP1.G)
-RSP1=Simple_reduce_order(SP2,5)
-RSP2=Simple_reduce_order(SP2,4,nor=1)
-RSP2.G
-RSP1.G
-RSP1==RSP2
-plot([RSP2,SP2],nsdiv=25)
-plot([RSP1,SP2],nsdiv=25)
-SP2.G
-SP2.E
-RSP1.G
-RSP1.E
-
-plot_multiple([RSP2,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=1_ord=5")
-plot_multiple([RSP1,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=2_ord=3")
-
-
+"""EXEMPLE POUR MONTRER QUE LA FORMULE D'ARGMIN DANS LA BASE CLASSIQUE EST IMPRECISE"""
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
+interval=IntervalBox(-1..1,2)
+listcoef1=[2, 4, 1, 2]
+listcoef2=[4, 4, 1, 2]
+inter=IntervalBox(-1..1,2)
+poply1=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef1)
+poply2=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef2)
+P1=get_SSPZ_from_polynomials([poply1,x*y])
+P2=get_SSPZ_from_polynomials([poply2,x*y])
+ranges_from_Bernsteincoeff(P1.G,P1.E,interval)
+ranges_from_Bernsteincoeff(P2.G,P2.E,interval)
+
+PJ=zonotopic_join(P1,P2,"bernstein")
+PBARY=barycentric_join(P1,P2)
+PBern=bernstein_zonotopic_join(P1,P2,R)
+PBern
+plot_multiple([PJ,P1,P2],R,"Documents/julia/plots_julia/joinzononontrivial")
+plot_multiple([PBARY,P1,P2],R,"Documents/julia/plots_julia/joinbarynontrivial")
+plot_multiple([P2,P1],R,"Documents/julia/plots_julia/deuxelementsajoin")
+plot_multiple([PBern,P2,P1],R,"Documents/julia/plots_julia/joinbernsteinnontrivial")
+
+
 
 """CET EXEMPLE DE JOIN ESR TRES JOLI"""
 
+R=RealField()
+
+
 P1=get_SSPZ_from_polynomials([x^2+2*y^2+1 ; x*y])
 P2=get_SSPZ_from_polynomials([x^3+y^2;2+x+x*y])
+S,(x,y)=PolynomialRing(R,["x","y"])
 P3=barycentric_join(P1,P2)
 get_polynomials_from_SSPZ(P1,R)
 get_polynomials_from_SSPZ(P2,R)
 @show(get_polynomials_from_SSPZ(P3,R))
 
+PB=bernstein_zonotopic_join(P1,P2,R)
+Pb=get_SSPZ_from_polynomials(PB)
+Pb.G
+
+
 P4=zonotopic_join(P1,P2,"bernstein")
+
+
 @show(get_polynomials_from_SSPZ(P4,R))
 plot_multiple([P4,P1,P2],R,"Documents/julia/plots_julia/deuxiemetestjoinzono")
+plot_multiple([Pb,P1,P2],R,"Documents/julia/plots_julia/deuxiemetestjoinzonobernstein")
+
 plot(P4,nsdiv=15)
+
+
+
+
+
+
+
+
+
 
 P5=get_SSPZ_from_polynomials([0.4*x^2+2*y^2+1 ; x*y])
 P6=get_SSPZ_from_polynomials([0.7*x^3+1.3*y^2; 2+0.8*x+x*y])
@@ -164,3 +183,34 @@ R3=zonotopic_join(R1,R2,"bernstein")
 R2.G
 R2.E
 plot_multiple([R3,R2,R1],R,"Documents/julia/plots_julia/joinzonocool9",nbpoints=500000)
+
+
+"""TESTS SUR LES REMOVE REDUNDANT GENERATORS ET LA REDUCTION"""
+SP1=SimpleSparsePolynomialZonotope([0 , 0.0],[ 0 3 2.5 2.0 2 2 2 2 1 0 0.2 3; 2 2 1.0 0 1.3 1 1 3 1 1 1 3],[2 2 1 1 1 1 2 1 2 0 1 3; 5 2 1 0 3 3 3 4 2 1 1 3])
+SP3=deepcopy(SP1)
+SP3.E
+SP3==SP1
+SP2=remove_useless_terms!(SP1)
+plot([SP3,SP1],nsdiv=28)
+plot(SP1,nsdiv=28)
+plot([SP2,SP3],nsdiv=28)
+SP2==SP3
+
+SP2.E
+SP3.G==SP1.G
+
+size(SP1.G)
+RSP1=Simple_reduce_order(SP2,5)
+RSP2=Simple_reduce_order(SP2,4,nor=1)
+RSP2.G
+RSP1.G
+RSP1==RSP2
+plot([RSP2,SP2],nsdiv=25)
+plot([RSP1,SP2],nsdiv=25)
+
+plot_multiple([RSP2,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=1_ord=5")
+plot_multiple([RSP1,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=2_ord=3")
+
+
+R=RealField()
+S,(x,y)=PolynomialRing(R,["x","y"])

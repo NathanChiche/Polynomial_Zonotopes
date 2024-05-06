@@ -427,13 +427,13 @@ function zonotopic_join(PZ1,PZ2,solver)
     GP2=fill_matrix_after_argmin(PZ2.G,PZ2.E,Gnew,Enew,m2,nh,f1)
 
     domain=IntervalBox(-1..1, e1)
-    ranges1=ranges_from_Bernsteincoeff(GP1,PZ1.E,domain)
+    ranges1=ranges_from_Bernsteincoeff(GP1,PZ1.E,domain)[1]
     for i in 1:n1 #WE HAVE TO ADD THE CENTER TO THE COMPUTED RANGES
         ranges1[i]=ranges1[i] .+ PZ1.c[i]
     end
     #@show(ranges1)
     domain=IntervalBox(-1..1, f1)
-    ranges2=ranges_from_Bernsteincoeff(GP2,PZ2.E,domain)
+    ranges2=ranges_from_Bernsteincoeff(GP2,PZ2.E,domain)[1]
     for i in 1:n1
         ranges2[i]=ranges2[i] .+ PZ2.c[i]
     end
@@ -460,6 +460,81 @@ function zonotopic_join(PZ1,PZ2,solver)
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 
 end
+
+function bernstein_zonotopic_join(PZ1,PZ2,field)
+    """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
+    c1=PZ1.c 
+    dim=length(c1)
+    c2=PZ2.c 
+    n1,n2=size(PZ1.G)
+    m1,m2=size(PZ2.G)
+    e1,e2=size(PZ1.E)
+    f1,f2=size(PZ2.E)
+    if (e1!=f1)
+        throw(DomainError(e1, "nombre de variables différent"))
+    end
+
+    maxdegree=map(max,maxdeg(PZ1.E),maxdeg(PZ2.E))
+    domain=IntervalBox(-1..1, e1)
+
+    ranges1,coeffs1=ranges_from_Bernsteincoeff(PZ1.G,PZ1.E,domain,maxdeg=maxdegree)
+    domain=IntervalBox(-1..1, f1)
+    ranges2,coeffs2=ranges_from_Bernsteincoeff(PZ2.G,PZ2.E,domain,maxdeg=maxdegree)
+    @show(ranges1,ranges2)
+    h=[]
+    nbcoeffs=length(coeffs1[1])
+    Anneau,(x)=PolynomialRing(field,e1+dim)
+    
+    res=[]
+    for i in 1:dim
+        A=min(ranges1[i][1],ranges2[i][1])
+        B=max(ranges1[i][2],ranges2[i][2])
+        argm=map(arg_min,coeffs1[i],coeffs2[i])
+        push!(h,zeros(Float64,nbcoeffs))
+        s=coeffs1[i]-argm
+        t=coeffs2[i]-argm
+        ms,Ms=minimum(s),maximum(s)
+        mt,Mt=minimum(t),maximum(t)
+        #on calcule notre polynome commun h
+        for j in 1:length(argm) #on calcule notre polynome commun h
+            if argm[j]>0
+                h[i][j]=min(argm[j],B-Ms,B-Mt)
+            elseif argm[j]<0
+                h[i][j]=max(argm[j],A-ms,A-mt)
+            else
+                h[i][j]=0
+            end
+        
+        end
+        #on convertit les coeffs h[i] en un vrai polynome polyh
+        @show(coeffs1,h,s)
+        @show(coeffs2,h,t)
+        hbis=polynomial_from_bernstein_coeffs(Anneau,maxdegree,domain,h[i])
+        #hbis=copy_poly(h[i],Anneau)
+        #on recalcule les polynomes f-h et g-h
+        for j in 1:length(coeffs1[i])
+            s[j]=coeffs1[i][j]-h[i][j] .+ PZ1.c[i]
+        end
+        for j in 1:length(coeffs2[i])
+            t[j]=coeffs2[i][j]-h[i][j] .+ PZ2.c[i]
+        end
+        #t=coeffs2[i]-h .+ PZ2.c[i]
+        mini=min(minimum(s),minimum(t))
+        maxi=max(maximum(s),maximum(t))  
+        @show(mini,maxi)
+        #on recalcule les polynomes f-h et g-h
+        mid=Float64(1/2*(mini+maxi))
+        #@show(mini,maxi,mid)
+        #println(mini," ", maxi," ", mid)
+        temp=mid+hbis+(Float64(maxi-mini)/2)*gens(Anneau)[e1+i]
+        @show(typeof(temp))
+        push!(res,temp)
+    end
+    Ph=get_SSPZ_from_polynomials(res)
+    return Ph
+
+end
+
 
 function fill_matrix_after_argmin(G,E,Gh,Eh,ngen,ngenh,nbvar)
     Gn=deepcopy(G)

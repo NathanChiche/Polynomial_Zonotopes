@@ -13,7 +13,7 @@ end
 
 ar=createIndexes([2,2])
 
-function list_bernstein_polyn(x,maxdeg,domain)
+function list_bernstein_polyn(geners,maxdeg,domain)
     listlist=[]
     temp=[]
     for i in 1:length(maxdeg)
@@ -21,8 +21,7 @@ function list_bernstein_polyn(x,maxdeg,domain)
         up=domain[i].hi
         lo=domain[i].lo
         for j in 0:l
-            println(j)
-            push!(temp,(binomial(l,j)/(up-lo)^l)*(up-x[i])^(l-j)*(x[i]-lo)^j)
+            push!(temp,(binomial(l,j)/(up-lo)^l)*(up-geners[i])^(l-j)*(geners[i]-lo)^j)
         end
         push!(listlist,temp)
         temp=[]
@@ -30,24 +29,47 @@ function list_bernstein_polyn(x,maxdeg,domain)
     return listlist
 end
 
-@polyvar x[1:2]
-po=x[1]*x[2]+1.0x[1]^2
-x.
-length(po)
-typeof(po)
-heh=list_bernstein_polyn(x,[2,1],ab)
-heh
-
-function get_nemopolynomial_from_bernsteincoeffs(liste,maxdeg,domain,indexlist)
+function list_nemo_unibernstein(geners,maxdeg,domain)
+    """on trouve tous les polynomes de bernstein univariés selon leurs degrés et domaines respectifs"""
+    listlist=[]
+    temp=[]
+    for i in 1:length(maxdeg)
+        l=maxdeg[i]
+        up=domain[i].hi
+        lo=domain[i].lo
+        for j in 0:l
+            push!(temp,(binomial(l,j)/(up-lo)^l)*(up-geners[i])^(l-j)*(geners[i]-lo)^j)
+        end
+        push!(listlist,temp)
+        temp=[]
+    end
+    return listlist
 end
-using MultivariatePolynomials
-MultivariatePolynomials.powers(x[1])
-nterms(po)
-for i in po
-    println(i)
-    println(powers(i))
+
+function list_nemo_multivbernstein(geners,maxdeg,domain)
+
+    ll=list_nemo_unibernstein(geners,maxdeg,domain)
+    res=everyproductsbis(ll)
+    return res
 end
 
+listcoef1=[2, 4, 1, 2]
+listcoef2=[4, 4, 1, 2]
+inter=IntervalBox(-1..1,2)
+poply1=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef1)
+poply2=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef2)
+list_nemo_multivbernstein(gens(S),[1,1],inter)
+
+
+function polynomial_from_bernstein_coeffs(Anneau,maxdeg,domain,listcoeffs)
+    geners=gens(Anneau)
+    nemobernstein=list_nemo_multivbernstein(geners,maxdeg,domain)
+    polynomeres=Anneau(0)
+    for i in 1:length(listcoeffs)
+        polynomeres+=listcoeffs[i]*nemobernstein[i]
+    end
+    return polynomeres
+end
 
 function monobernsteinmultivar_from_univariatesbis(monomial,maxdeg,domain,indexlist)
     #on obtient dans la liste coeffs les coeffs de Bernstein multivariés pour un monome précis sur un domaine précis
@@ -62,16 +84,36 @@ function monobernsteinmultivar_from_univariatesbis(monomial,maxdeg,domain,indexl
     end
     return coeffs
 end
-Interval(-1..1,2)
+
 function monobernsteinmultivar_from_univariates(monomial,maxdeg,domain)
     #on obtient dans la liste coeffs les coeffs de Bernstein multivariés pour un monome précis sur un domaine précis
-    
     ll=multivariate(monomial,maxdeg,domain)
     
     coeffs=everyproducts(ll)
     return coeffs
 end
 
+domain
+
+function maxdeg(Expo)
+    n1=size(Expo)[1]
+    maxdeg=Vector{Int64}(undef,n1)
+    for i in 1:n1
+        maxdeg[i]=maximum(@view Expo[i,:])
+    end
+    return maxdeg
+end
+
+function list_monomials(Expo)
+    n1,n2=size(Expo)
+    @polyvar x[1:n1]
+    listmonomials=Array{Monomial}(undef,n2)
+    for i in 1:n2
+        listmonomials[i]=Monomial(x,Expo[:,i])
+    end
+
+    return listmonomials
+end
 
 function findmaxdeg_listmono(Expo)
     #@show(Expo)
@@ -91,12 +133,14 @@ function findmaxdeg_listmono(Expo)
 end
 
 
-function every_multivariate_bernsteincoeff(Expo,domain)
+function every_multivariate_bernsteincoeff(Expo,domain,maxdegr,listmono)
     
-    maxdegr,listmono=findmaxdeg_listmono(Expo)
+    #maxdegr,listmono=findmaxdeg_listmono(Expo)
     #index=createIndexes(maxdegr)
     nbmonomials=size(Expo)[2]
+    #@show(Expo)
     All=Array{Vector{Float64}}(undef,nbmonomials)
+    #@show(listmono)
     for i in 1:nbmonomials
         All[i]=monobernsteinmultivar_from_univariates(listmono[i],maxdegr,domain)
     end
@@ -104,9 +148,17 @@ function every_multivariate_bernsteincoeff(Expo,domain)
 end
 
 
-function ranges_from_Bernsteincoeff(G,E,domain)
+function ranges_from_Bernsteincoeff(G,E,domain;maxdeg=nothing)
+    #@show(E)
+    if maxdeg ===nothing
+        maxdegr,listmono=findmaxdeg_listmono(E)
+    else
+        maxdegr=maxdeg
+        listmono=list_monomials(E)
+    end
+    #maxdegr,listmono=findmaxdeg_listmono(E)
     dim=size(G)[1]
-    coeffs=every_multivariate_bernsteincoeff(E,domain)
+    coeffs=every_multivariate_bernsteincoeff(E,domain,maxdegr,listmono)
     nbmonomials=length(coeffs)
     polynomials_coeffs=Vector{Vector{Float64}}(undef,dim)
     ranges=Vector{Vector{Float64}}(undef,dim)
@@ -118,8 +170,11 @@ function ranges_from_Bernsteincoeff(G,E,domain)
     end
     #@show(polynomials_coeffs)
     
-    return ranges
+    return ranges,polynomials_coeffs
 end
+
+
+
 
 """listest=[[1,2,1],[1,2,4]#=,[0,1,3]=#]
 listest[1]
@@ -185,6 +240,35 @@ function everyproducts(listlist)
     return res
 end
 
+
+function everyproductsb(listlist,anneau)
+    num=prod(length(k) for k in listlist)
+    res=zeros(Float,num)
+    type=typeof(anneau(0))
+    temp=zeros(type,num)
+    len=length(listlist[1])
+    for c in 1:len
+        temp[c]=listlist[1][c]
+    end
+    l=length(listlist)
+    for i in 2:l
+        t=length(listlist[i])
+        for j in 1:len
+            for h in 1:t
+                res[(j-1)*t+h]=temp[j]*listlist[i][h]
+            end
+        end
+        len=len*t
+        #recopie de res dans temp
+        if i<l
+            for s in 1:len
+                temp[s]=res[s]
+            end
+        end
+    end
+    return res
+end
+
 function everyproductsbis(listlist)
     res=[]
     temp=listlist[1]
@@ -197,6 +281,8 @@ function everyproductsbis(listlist)
     end
     return res
 end
+
+
 
 
 """listest=[[1.0,2,1],[1,2,4],[2,4,6,1,77,2],[0,1,2],[1,1,2],[111,123,4134],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[0,1,2],[1,3,2,2222222,1]]
@@ -251,7 +337,3 @@ Mt=ntuple(d->1:N+2, D)
 1:5
 Nt=(Nt...,1:5)
 [I for I in Iterators.product(Nt...)]"""
-
-
-ab=IntervalBox(-1..1,2)
-ab[1].hi
