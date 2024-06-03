@@ -105,7 +105,7 @@ function main()
 
 
     start_time = now()
-    fin=iterate_polynomials_over_PZ([lineaire1,lineaire2],Plineaire,8,1,R,"bary",max_order=20,power=1,solver="bernstein")
+    fin=iterate_polynomials_over_PZ([p6,p7],P1,4,2,R,"bernstein",max_order=2000,power=1,solver="bernstein")
    
     end_time = now()
     elapsed = end_time - start_time
@@ -120,20 +120,20 @@ function main()
     println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
     #plot_multiple(fin,R,"Documents/julia/plots_julia/mixlincha_3it_nojoin_ordre=500",nbpoints=40000)
-    #plot_sampling(fini,R,"Documents/julia/plots_julia/chatal^1_4iter_joinbarymatriciel1_maxorder=50_100000pts_",nbpoints=100000)
+    plot_sampling(fini,R,"Documents/julia/plots_julia/rotation^1_3iter_joinzonobernstein1_maxorder=2000_100000pts_",nbpoints=100000)
     
 
     #plot_multiple([derniere,fini],R,"Documents/julia/plots_julia/lineaire^1_5iter_joinbary0_Inclusion?_1000000pt",nbpoints=1000000)
     
 
-    MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/fini_lineaire_8iter_bary1_reduc20.txt","flin8_1") 
-    next=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
+    #MatlabMatrix(fini,"Documents/julia/Traduct_Matlab/fini_lineaire_8iter_bary1_reduc20.txt","flin8_1") 
+    #next=poly_apply_on_SSPZ(fini,[lineaire1,lineaire2],R)
     #next=poly_apply_on_SSPZ(next,[basique1,basique2],R)
-    MatlabMatrix(next,"Documents/julia/Traduct_Matlab/next_lineaire_8iter_bary1_reduc20.txt","nlin8_1") 
+    #MatlabMatrix(next,"Documents/julia/Traduct_Matlab/next_lineaire_8iter_bary1_reduc20.txt","nlin8_1") 
 
     
 
-    return fini,next
+    return fini
     #return derniere
     return fini
 end

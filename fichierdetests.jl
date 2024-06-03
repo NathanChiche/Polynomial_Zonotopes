@@ -23,7 +23,9 @@ R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
 interval=IntervalBox(-1..1,2)
 listcoef1=[2, 4, 1, 2]
-listcoef2=[4, 4, 1, 2]
+#listcoef2=[4, 4, 1, 2]
+listcoef2=[8, 8, 5, 6]
+
 inter=IntervalBox(-1..1,2)
 poply1=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef1)
 poply2=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef2)
@@ -31,15 +33,26 @@ P1=get_SSPZ_from_polynomials([poply1,x*y])
 P2=get_SSPZ_from_polynomials([poply2,x*y])
 ranges_from_Bernsteincoeff(P1.G,P1.E,interval)
 ranges_from_Bernsteincoeff(P2.G,P2.E,interval)
+G=[1.0 0.0; 0 1.0] 
+E=[1 0; 0 1]
+ranges_from_Bernsteincoeff(G,E,interval,maxdeg=[1,1])
 
 PJ=zonotopic_join(P1,P2,"bernstein")
 PBARY=barycentric_join(P1,P2)
 PBern=bernstein_zonotopic_join(P1,P2,R)
-PBern
-plot_multiple([PJ,P1,P2],R,"Documents/julia/plots_julia/joinzononontrivial")
-plot_multiple([PBARY,P1,P2],R,"Documents/julia/plots_julia/joinbarynontrivial")
-plot_multiple([P2,P1],R,"Documents/julia/plots_julia/deuxelementsajoin")
-plot_multiple([PBern,P2,P1],R,"Documents/julia/plots_julia/joinbernsteinnontrivial")
+get_polynomials_from_SSPZ(PBern,R)
+plot_multiple([PJ,P2,P1],R,"Documents/julia/plots_julia/decaljoinzononontrivial")
+plot_multiple([PBARY,P1,P2],R,"Documents/julia/plots_julia/decaljoinbarynontrivial")
+#plot_multiple([P2,P1],R,"Documents/julia/plots_julia/deuxelementsajoin")
+plot_multiple([PBern,P2,P1],R,"Documents/julia/plots_julia/3joinbernsteinnontrivial")
+
+
+"""Join de boites bernstein"""
+P3=get_SSPZ_from_polynomials([0.5*y;x])
+P4=get_SSPZ_from_polynomials([x+3;1.2*y+2])
+P5=bernstein_zonotopic_join(P3,P4,R)
+get_polynomials_from_SSPZ(P5,R)
+plot_multiple([P5,P4,P3],R,"Documents/julia/plots_julia/joinbernsteinsurboites")
 
 
 
@@ -55,18 +68,24 @@ P3=barycentric_join(P1,P2)
 get_polynomials_from_SSPZ(P1,R)
 get_polynomials_from_SSPZ(P2,R)
 @show(get_polynomials_from_SSPZ(P3,R))
-
+P1.c
+P2.c
+ranges_from_Bernsteincoeff(P1.G,P1.E,inter)
+ranges_from_Bernsteincoeff(P2.G,P2.E,inter)
 PB=bernstein_zonotopic_join(P1,P2,R)
-Pb=get_SSPZ_from_polynomials(PB)
+Polyb=get_polynomials_from_SSPZ(PB,R)
+Poly1=get_polynomials_from_SSPZ(P1,R)
 Pb.G
 
 
 P4=zonotopic_join(P1,P2,"bernstein")
+get_polynomials_from_SSPZ(P4,R)
 
 
 @show(get_polynomials_from_SSPZ(P4,R))
 plot_multiple([P4,P1,P2],R,"Documents/julia/plots_julia/deuxiemetestjoinzono")
-plot_multiple([Pb,P1,P2],R,"Documents/julia/plots_julia/deuxiemetestjoinzonobernstein")
+plot_multiple([PB,P1,P2],R,"Documents/julia/plots_julia/deuxiemetestjoinzonobernstein")
+
 
 plot(P4,nsdiv=15)
 

@@ -48,7 +48,10 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         end=#
 
         if i>= borne_union
-            if choice=="zono"
+            if choice=="bernstein"
+                println("ON FAIT BIEN LE JOIN DE BERNSTEIN")
+                PZ=bernstein_zonotopic_join(PZ_previous,fPZ,field)
+            elseif choice=="zono"
                 PZ=zonotopic_join(PZ_previous,fPZ,solver)
                 PZ=remove_unused_variables(PZ)
             else

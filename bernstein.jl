@@ -53,14 +53,7 @@ function list_nemo_multivbernstein(geners,maxdeg,domain)
     return res
 end
 
-listcoef1=[2, 4, 1, 2]
-listcoef2=[4, 4, 1, 2]
 
-sum(listcoef1[i]*listcoef2[i] for i in 1:4)
-inter=IntervalBox(-1..1,2)
-poply1=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef1)
-poply2=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef2)
-list_nemo_multivbernstein(gens(S),[1,1],inter)
 
 
 function polynomial_from_bernstein_coeffs(Anneau,maxdeg,domain,listcoeffs)

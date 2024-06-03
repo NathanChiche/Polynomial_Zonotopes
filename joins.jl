@@ -461,11 +461,15 @@ function zonotopic_join(PZ1,PZ2,solver)
 
 end
 
+[1, 2,3 ,4].-(2+4)/2
+
 function bernstein_zonotopic_join(PZ1,PZ2,field)
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
     c1=PZ1.c 
     dim=length(c1)
     c2=PZ2.c 
+    n1,n2=size(PZ1.G)
+    m1,m2=size(PZ2.G)
     e1,e2=size(PZ1.E)
     f1,f2=size(PZ2.E)
     if (e1!=f1)
@@ -474,20 +478,42 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
 
     maxdegree=map(max,maxdeg(PZ1.E),maxdeg(PZ2.E))
     domain=IntervalBox(-1..1, e1)
-
+    rangesbis1,coeffsbis1=ranges_from_Bernsteincoeff(PZ1.G,PZ1.E,domain)
+    @show(rangesbis1)
     ranges1,coeffs1=ranges_from_Bernsteincoeff(PZ1.G,PZ1.E,domain,maxdeg=maxdegree)
     domain=IntervalBox(-1..1, f1)
     ranges2,coeffs2=ranges_from_Bernsteincoeff(PZ2.G,PZ2.E,domain,maxdeg=maxdegree)
     @show(ranges1,ranges2)
+    for i in 1:dim #WE HAVE TO ADD THE CENTER TO THE COMPUTED RANGES 
+        ranges1[i]=ranges1[i] .+ c1[i]
+        ranges2[i]=ranges2[i] .+ c2[i]
+    end
+    @show(ranges1,ranges2)
     h=[]
     nbcoeffs=length(coeffs1[1])
     Anneau,(x)=PolynomialRing(field,e1+dim)
+    @show(coeffs1)
+    @show(coeffs2)
     
     res=[]
     for i in 1:dim
+        
         A=min(ranges1[i][1],ranges2[i][1])
         B=max(ranges1[i][2],ranges2[i][2])
+        #@show(A,B)
+        shift=-(A+B)/2
+        @show(shift)
+        @show(coeffs1[i])
+        @show(coeffs2[i])
+        coeffs1[i]=coeffs1[i].+(c1[i]+shift)
+        coeffs2[i]=coeffs2[i].+(c2[i]+shift)
+        println("modif des coeffs")
+        @show(coeffs1[i])
+        @show(coeffs2[i])
+        Ashift=A+shift
+        Bshift=B+shift
         argm=map(arg_min,coeffs1[i],coeffs2[i])
+        @show(argm)
         push!(h,zeros(Float64,nbcoeffs))
         s=coeffs1[i]-argm
         t=coeffs2[i]-argm
@@ -496,9 +522,11 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         #on calcule notre polynome commun h
         for j in 1:length(argm) #on calcule notre polynome commun h
             if argm[j]>0
-                h[i][j]=min(argm[j],B-Ms,B-Mt)
+                h[i][j]=min(argm[j],Bshift-Ms,Bshift-Mt)
+                #@show(Bshift,Ms,Mt)
             elseif argm[j]<0
-                h[i][j]=max(argm[j],A-ms,A-mt)
+                h[i][j]=max(argm[j],Ashift-ms,Ashift-mt)
+                #@show(Ashift,ms,mt,Ashift-ms)
             else
                 h[i][j]=0
             end
@@ -507,27 +535,32 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         #on convertit les coeffs h[i] en un vrai polynome polyh
         @show(coeffs1[i],h[i],s)
         @show(coeffs2[i],h[i],t)
+        println("polynomialfrombernsteincoeffs")
         hbis=polynomial_from_bernstein_coeffs(Anneau,maxdegree,domain,h[i])
+        println("polynomialfrombernsteincoeffs ended")
         #hbis=copy_poly(h[i],Anneau)
         #on recalcule les polynomes f-h et g-h
         for j in 1:length(coeffs1[i])
-            s[j]=coeffs1[i][j]-h[i][j] .+ c1[i]
+            s[j]=coeffs1[i][j]-h[i][j]
         end
         for j in 1:length(coeffs2[i])
-            t[j]=coeffs2[i][j]-h[i][j] .+ c2[i]
+            t[j]=coeffs2[i][j]-h[i][j]
         end
+        s=s.-shift
+        t=t.-shift
         #t=coeffs2[i]-h .+ PZ2.c[i]
         mini=min(minimum(s),minimum(t))
         maxi=max(maximum(s),maximum(t))  
-        @show(mini,maxi)
+        #@show(mini,maxi)
         #on recalcule les polynomes f-h et g-h
         mid=Float64(1/2*(mini+maxi))
         #@show(mini,maxi,mid)
         #println(mini," ", maxi," ", mid)
         temp=mid+hbis+(Float64(maxi-mini)/2)*gens(Anneau)[e1+i]
-        @show(mid,hbis,(maxi-mini)/2,temp)
+        #@show(mid,hbis,(maxi-mini)/2,temp)
         push!(res,temp)
     end
+    println("fin du join, reste à convertir")
     Ph=get_SSPZ_from_polynomials(res)
     return Ph
 
