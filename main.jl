@@ -88,9 +88,15 @@ function main()
     mix_linch1=lineaire1 + 0.2*chatal1
     mix_linch2=lineaire2 + 0.2*chatal2
 
+    lineaireex1= 0.7*x + 0.3*y
+    lineaireex2=0.2*x + 0.6*y
 
-    
-
+    #A=[0.7 0.2; 0.3 0.6]
+    P=[2.0 1; 1 2]
+    #At=transpose(A)
+    #M=P-At*P*A
+    Ellipso1=Ellipsoid(P)
+    Pellipso1=get_SSPZ_from_polynomials([(x^2+x*y)-1; (x*y+ y^2)-1])
     PHenon=get_SSPZ_from_polynomials([1/5*x ,1/5*y])
     Pparillo=get_SSPZ_from_polynomials([1/10*x+12 ,1/10*y+2])
     PChatal=get_SSPZ_from_polynomials([1/6*x+1/6 ,1/6*y+1/6])
@@ -103,24 +109,48 @@ function main()
     Plokta=get_SSPZ_from_polynomials([1/5*x + 5  ,1/5*y+2])
     Pbasique=get_SSPZ_from_polynomials([1/3*x + 1  ,1/3*y+1])
 
-
+    plouf1=x^2
+    plouf2=y^2
     start_time = now()
-    fin=iterate_polynomials_over_PZ([p6,p7],P1,4,2,R,"bernstein",max_order=2000,power=1,solver="bernstein")
-   
+    fin=iterate_polynomials_over_PZ([lineaireex1,lineaireex2],Pellipso1,3,10,R,"bernstein",max_order=2000,power=1,solver="bernstein")
+    
+    domain=IntervalBox(-1..1, 2)
+    #=for i in 1:length(fin)-1
+        println("Nombre d'iteration",i)
+        @show(convergencebetweenlists(fin[i],fin[i+1],domain))
+        println(get_polynomials_from_SSPZ(fin[i],R))
+       
+    end=#
+    #a=polynomial_from_bernstein_coeffs(S,[2,2],domain,ranges_from_Bernsteincoeff(fin[1].G,fin[1].E,domain)[2][1])
+    #b=polynomial_from_bernstein_coeffs(S,[2,2],domain,ranges_from_Bernsteincoeff(fin[1].G,fin[1].E,domain)[2][2])
+
+    #c=polynomial_from_bernstein_coeffs(S,[2,2],domain,ranges_from_Bernsteincoeff(fin[2].G,fin[2].E,domain)[2][1])
+    #d=polynomial_from_bernstein_coeffs(S,[2,2],domain,ranges_from_Bernsteincoeff(fin[2].G,fin[2].E,domain)[2][2])
+    #@show(a)
+    #@show(b)
+    #@show(c)
+    #@show(d)
+
+    #@show(get_polynomials_from_SSPZ(fin[1],R))
+    #@show(get_polynomials_from_SSPZ(fin[2],R))
+
+
+
+
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
     #fin=reverse(fin)
     fini=fin[end]
-    fin=reverse(fin)
-    println("nombre de variables à la fin: ",size((fini).E)[1])
-    println("nombre de monomes à la fin: ",size(fini.E)[2])
-    somme=sum(fini.E,dims=1)
-    som=vec(somme)
-    println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
+    #fin=reverse(fin)
+    #println("nombre de variables à la fin: ",size((fini).E)[1])
+    #println("nombre de monomes à la fin: ",size(fini.E)[2])
+    #somme=sum(fini.E,dims=1)
+    #som=vec(somme)
+    #println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    #plot_multiple(fin,R,"Documents/julia/plots_julia/mixlincha_3it_nojoin_ordre=500",nbpoints=40000)
-    plot_sampling(fini,R,"Documents/julia/plots_julia/rotation^1_3iter_joinzonobernstein1_maxorder=2000_100000pts_",nbpoints=100000)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire1_bernsteinjoin2_4iter",nbpoints=40000)
+    #plot_sampling(fini,R,"Documents/julia/plots_julia/rotation^1_3iter_joinzonobernstein1_maxorder=2000_100000pts_",nbpoints=100000)
     
 
     #plot_multiple([derniere,fini],R,"Documents/julia/plots_julia/lineaire^1_5iter_joinbary0_Inclusion?_1000000pt",nbpoints=1000000)
@@ -133,12 +163,26 @@ function main()
 
     
 
-    return fini
+    return fin
     #return derniere
     return fini
 end
 
 @time r=main()
+get_polynomials_from_SSPZ(r[3],R)
+r[2]
+plot_multiple([slo,r[2],r[3]],R,"Documents/julia/plots_julia/exemplejoinbernsteinsurellipses",nbpoints=4000000)
+
+plot([slo,r[2],r[3]],nsdiv=20)
+ranges_from_Bernsteincoeff(r[2].G,r[2].E,dom)[2]
+polynomial_from_bernstein_coeffs(S,[2,2],dom,[0.04000000000000001, 0.04000000000000001, 0.04000000000000001, -0.04000000000000001, -0.04000000000000001, -0.04000000000000001, 0.04000000000000001, 0.04000000000000001, 0.04000000000000001])
+polynomial_from_bernstein_coeffs(S,[2,2],dom, [0.04000000000000001, -0.04000000000000001, 0.04000000000000001, 0.04000000000000001, -0.04000000000000001, 0.04000000000000001, 0.04000000000000001, -0.04000000000000001, 0.04000000000000001])
+
+dom=IntervalBox(-1..1,2)
+polynomial_from_bernstein_coeffs(S,[2,2],dom,[1.0, 0.0, -1.0, -2.0, -2.0, -2.0, -1.0, 0.0, 1.0])
+polynomial_from_bernstein_coeffs(S,[2,2],dom,[1.0, -2.0, -1.0, 0.0, -2.0, 0.0, -1.0, -2.0, 1.0])
+
+polynomial_from_bernstein_coeffs(S,[2,2],dom,[0.19999999999999996, -2.8, -1.8, -0.8, -2.8, -0.8, -1.8, -2.8, 0.19999999999999996])
 
 
 

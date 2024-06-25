@@ -142,6 +142,45 @@ function every_multivariate_bernsteincoeff(Expo,domain,maxdegr,listmono)
     return All
 end
 
+ll=[[1 , 1,3], [2 , 2,2]]
+length(ll)
+
+function convergencebetweenlists(P1,P2)
+
+    """Need to give an alternative with the maxdeg as an argument to compare """
+    domain=IntervalBox(-1..1,size(P1.E)[2])
+    ll1=ranges_from_Bernsteincoeff(P1.G,P1.E,domain)[2]
+    l=length(ll1)
+    for i in 1:l
+        ll1[i]=ll1[i].+P1.c[i]
+    end
+    domain=IntervalBox(-1..1,size(P2.E)[2])
+    ll2=ranges_from_Bernsteincoeff(P2.G,P2.E,domain)[2]
+    for i in 1:l
+        ll2[i]=ll1[i].+P2.c[i]
+    end
+    R=RealField()
+    An,(x,y)=PolynomialRing(R,["x","y"])
+    diff=Array{Vector{Float64}}(undef,l)
+    absolconv=Array{Float64}(undef,l)
+    for i in 1:l
+        #println("VOOIR ICI")
+        #println("VOOIR ICI")
+        #@show(ll1[i])
+        #@show(polynomial_from_bernstein_coeffs(An,[2,2],domain,ll1[i]))
+        #@show(ll2[i])
+        #@show(polynomial_from_bernstein_coeffs(An,[2,2],domain,ll2[i]))
+        #@show(map(abs,(ll1[i]-ll2[i])))
+        diff[i]=map(abs,(ll1[i]-ll2[i]))
+        #@show(diff[i])
+        absolconv[i]=maximum(diff[i])
+    end
+    return diff,absolconv
+end
+
+map(abs,[1,2,3]-[2,2,2])
+
+
 
 function ranges_from_Bernsteincoeff(G,E,domain;maxdeg=nothing)
     #@show(E)

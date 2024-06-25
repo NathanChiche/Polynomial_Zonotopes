@@ -7,6 +7,29 @@ using DynamicPolynomials
 using BernsteinExpansions
 using IntervalArithmetic
 using IntervalContractors
+using LinearAlgebra
+
+
+A=[0.7 0.2; 0.3 0.6]
+A=0.5*A
+At=transpose(A)
+P=[2.0 1; 1 2]
+M=P-At*P*A
+Mb=At*P*A
+#M=[0.42 -0.04 ; -0.12 0.88]
+eigvals(A)
+eigvals(Mb)
+eigvals(M)
+isposdef(M)
+El=Ellipsoid(P)
+Em=Ellipsoid(Mb)
+plot([El,Em],nsdiv=25)
+Em=Ellipsoid(Mb)
+x
+SP=get_SSPZ_from_polynomials([(x^2+x*y)-1; (x*y+ y^2)-1])
+plot(SP,nsdiv=20)
+
+
 
 include("conversions.jl")
 include("joins.jl")
@@ -23,8 +46,8 @@ R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
 interval=IntervalBox(-1..1,2)
 listcoef1=[2, 4, 1, 2]
-#listcoef2=[4, 4, 1, 2]
-listcoef2=[8, 8, 5, 6]
+listcoef2=[-2, -2, -5, -4]
+#listcoef2=[8, 8, 5, 6]
 
 inter=IntervalBox(-1..1,2)
 poply1=polynomial_from_bernstein_coeffs(S,[1,1],inter,listcoef1)
@@ -33,9 +56,11 @@ P1=get_SSPZ_from_polynomials([poply1,x*y])
 P2=get_SSPZ_from_polynomials([poply2,x*y])
 ranges_from_Bernsteincoeff(P1.G,P1.E,interval)
 ranges_from_Bernsteincoeff(P2.G,P2.E,interval)
-G=[1.0 0.0; 0 1.0] 
-E=[1 0; 0 1]
-ranges_from_Bernsteincoeff(G,E,interval,maxdeg=[1,1])
+G=[1 ;0. ]
+E=[2  ]
+dimaine=IntervalBox(-1..1,1)
+ranges_from_Bernsteincoeff(G,E,dimaine)
+
 
 PJ=zonotopic_join(P1,P2,"bernstein")
 PBARY=barycentric_join(P1,P2)
@@ -44,8 +69,8 @@ get_polynomials_from_SSPZ(PBern,R)
 plot_multiple([PJ,P2,P1],R,"Documents/julia/plots_julia/decaljoinzononontrivial")
 plot_multiple([PBARY,P1,P2],R,"Documents/julia/plots_julia/decaljoinbarynontrivial")
 #plot_multiple([P2,P1],R,"Documents/julia/plots_julia/deuxelementsajoin")
-plot_multiple([PBern,P2,P1],R,"Documents/julia/plots_julia/3joinbernsteinnontrivial")
-
+plot_multiple([PBern,P2,P1],R,"Documents/julia/plots_julia/3joinbernsteinndecaleenbas")
+[1,  2,  1] .+ 2
 
 """Join de boites bernstein"""
 P3=get_SSPZ_from_polynomials([0.5*y;x])

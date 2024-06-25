@@ -501,17 +501,20 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         A=min(ranges1[i][1],ranges2[i][1])
         B=max(ranges1[i][2],ranges2[i][2])
         #@show(A,B)
-        shift=-(A+B)/2
-        @show(shift)
-        @show(coeffs1[i])
-        @show(coeffs2[i])
-        coeffs1[i]=coeffs1[i].+(c1[i]+shift)
-        coeffs2[i]=coeffs2[i].+(c2[i]+shift)
-        println("modif des coeffs")
-        @show(coeffs1[i])
-        @show(coeffs2[i])
-        Ashift=A+shift
-        Bshift=B+shift
+        #shift=-(A+B)/2
+        #@show(shift)
+        #@show(coeffs1[i])
+        #@show(coeffs2[i])
+        #coeffs1[i]=coeffs1[i].+(c1[i]+shift)
+        #coeffs2[i]=coeffs2[i].+(c2[i]+shift)
+        #println("modif des coeffs")
+        #@show(coeffs1[i])
+        #@show(coeffs2[i])
+        #Ashift=A+shift
+        #Bshift=B+shift
+        println("coucou")
+        coeffs1[i]=coeffs1[i] .+ c1[i]
+        coeffs2[i]=coeffs2[i] .+ c2[i]
         argm=map(arg_min,coeffs1[i],coeffs2[i])
         @show(argm)
         push!(h,zeros(Float64,nbcoeffs))
@@ -522,10 +525,10 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         #on calcule notre polynome commun h
         for j in 1:length(argm) #on calcule notre polynome commun h
             if argm[j]>0
-                h[i][j]=min(argm[j],Bshift-Ms,Bshift-Mt)
+                h[i][j]=min(argm[j],B-Ms,B-Mt)
                 #@show(Bshift,Ms,Mt)
             elseif argm[j]<0
-                h[i][j]=max(argm[j],Ashift-ms,Ashift-mt)
+                h[i][j]=max(argm[j],A-ms,A-mt)
                 #@show(Ashift,ms,mt,Ashift-ms)
             else
                 h[i][j]=0
@@ -546,8 +549,8 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         for j in 1:length(coeffs2[i])
             t[j]=coeffs2[i][j]-h[i][j]
         end
-        s=s.-shift
-        t=t.-shift
+        #s=s.-shift
+        #t=t.-shift
         #t=coeffs2[i]-h .+ PZ2.c[i]
         mini=min(minimum(s),minimum(t))
         maxi=max(maximum(s),maximum(t))  
