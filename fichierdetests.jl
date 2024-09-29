@@ -25,8 +25,9 @@ El=Ellipsoid(P)
 Em=Ellipsoid(Mb)
 plot([El,Em],nsdiv=25)
 Em=Ellipsoid(Mb)
-x
+
 SP=get_SSPZ_from_polynomials([(x^2+x*y)-1; (x*y+ y^2)-1])
+SP=get_SSPZ_from_polynomials([(x+y); 2*x+y])
 plot(SP,nsdiv=20)
 
 
@@ -45,6 +46,10 @@ include("bernstein.jl")
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
 interval=IntervalBox(-1..1,2)
+Prange=get_SSPZ_from_polynomials([x^2*y^2;x^4*y^2])
+plot(Prange,nsdiv=35)
+plot_sampling(Prange,R,"Documents/julia/plots_julia/testrange")
+
 listcoef1=[2, 4, 1, 2]
 listcoef2=[-2, -2, -5, -4]
 #listcoef2=[8, 8, 5, 6]
