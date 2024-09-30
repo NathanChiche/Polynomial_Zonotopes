@@ -45,8 +45,9 @@ include("bernstein.jl")
 """EXEMPLE POUR MONTRER QUE LA FORMULE D'ARGMIN DANS LA BASE CLASSIQUE EST IMPRECISE"""
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
-interval=IntervalBox(-1..1,2)
+intervl=IntervalBox(-1..1,2)
 Prange=get_SSPZ_from_polynomials([x^2*y^2;x^4*y^2])
+Prange.c[1]
 plot(Prange,nsdiv=35)
 plot_sampling(Prange,R,"Documents/julia/plots_julia/testrange")
 
