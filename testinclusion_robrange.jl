@@ -64,6 +64,7 @@ function make_quant2(n1,n2) # C'est nul
     end
     return res
 end
+make_quant2(1,2)
 
 
 function O(range_Jf, i)
@@ -74,18 +75,19 @@ function I(range_Jf,i)
     return @interval(-(abs(range_Jf[i]).lo),abs(range_Jf[i]).lo)
 end
 
-function outer_approx(range_Dg,center,quantifiers)
+function outer_approx(range_Dg,center,quantifiers,variablesorder)
     min=center
     max=center
     p=length(quantifiers)
     for i in 0:p-1
-        if quantifiers[p-i]=="exists"
-            temp=O(range_Dg,p-i)
+
+        if quantifiers[variablesorder[p-i]]=="exists"
+            temp=O(range_Dg,variablesorder[p-i])
             println(temp ,"exists")
             min=min+temp.lo
             max=max+temp.hi
         else
-            temp=I(range_Dg,p-i)
+            temp=I(range_Dg,variablesorder[p-i])
             println(temp ,"forall")
             min=min+temp.hi
             max=max+temp.lo
@@ -100,17 +102,17 @@ function outer_approx(range_Dg,center,quantifiers)
     return @interval(min,max)
 end
 
-function inner_approx(range_Dg,center,quantifiers)
+function inner_approx(range_Dg,center,quantifiers,variablesorder)
     min=center
     max=center
     p=length(quantifiers)
     for i in 0:p-1
-        if quantifiers[p-i]=="exists"
-            temp=I(range_Dg,p-i)
+        if quantifiers[variablesorder[p-i]]=="exists"
+            temp=I(range_Dg,variablesorder[p-i])
             min=min+temp.lo
             max=max+temp.hi
         else
-            temp=O(range_Dg,p-i)
+            temp=O(range_Dg,variablesorder[p-i])
             min=min+temp.hi
             max=max+temp.lo
             if max<min
@@ -121,6 +123,7 @@ function inner_approx(range_Dg,center,quantifiers)
     end
     return @interval(min,max)
 end
+#on doit faire un tableau qui liste dans quel ordre on intervient
 
 function centers(Polynomes1,Polynomes2,n1,n2)
     @assert length(Polynomes1)==length(Polynomes2)
@@ -133,12 +136,12 @@ function centers(Polynomes1,Polynomes2,n1,n2)
     return centers
 end
 
-function call_multiple_outers_bis(rangelist,centers,quantifiers)
+function call_multiple_outers_bis(rangelist,centers,quantifiers,variablesorder)
     println("centers :",centers)
     intervals=[]
     #m=length(quantifiers)
     for j in 1:length(rangelist)
-        i=outer_approx(rangelist[j],centers[j],quantifiers)
+        i=outer_approx(rangelist[j],centers[j],quantifiers,variablesorder)
         if !(0 in i)
             println("0 n'est même pas dans l'outer approx")
             return false
@@ -149,12 +152,12 @@ function call_multiple_outers_bis(rangelist,centers,quantifiers)
     return intervals
 end
 
-function call_multiple_inners_bis(rangelist,centers,quantifiers)
+function call_multiple_inners_bis(rangelist,centers,quantifiers,variablesorder)
     println("centers :",centers)
     intervals=[]
     #m=length(x)
     for j in 1:length(rangelist)
-        i=inner_approx(rangelist[j],centers[j],quantifiers)
+        i=inner_approx(rangelist[j],centers[j],quantifiers,variablesorder)
         if !(0 in i) || i==false
             println("0 n'est pas dans l'inner pour quant: ",quantifiers)
             return false
@@ -242,9 +245,11 @@ end
 
 function test_primal() #ATTENTION: plutôt gros problème sur la tête des ranges jacobiennes qui doivent être des intervalles
     R=RealField()
-    Anneau,(x,y)=PolynomialRing(R,["s","t"])
-    pol1=[2*x^2+2*x,2*y^3+2*y]
-    pol2=[3*x^2+5*x,3*(y^3)+3*y] #ici c'est censé etre un true dans les bons cas
+    Anneau,(x,y)=PolynomialRing(R,["x","y"])
+    pol1=[2*x^2+2*x]
+    pol2=[3*x^2+5*x]
+    #pol1=[2*x^2+2*x,2*y^3+2*y]
+    #pol2=[3*x^2+5*x,3*(y^3)+3*y] #ici c'est censé etre un true dans les bons cas
     #pol1=[2*x*y^2+y+3,y^2*x^3+1]
     #pol2=[x^2+x,2*y^2*x+1]
     #println(centers(pol1,pol2,2,2)) celle-ci fonctionne pas mal
@@ -252,4 +257,67 @@ function test_primal() #ATTENTION: plutôt gros problème sur la tête des range
 end
 
 test_primal()
+f(x)=(1//4)*(x[1]^2) + (1 + x[2])*(2 + x[3]) + (3 + x[3])^2
+
+function defineintricate()
+    
+    f(x)=(1//4)*(x[1]^2) + (1 + x[2])*(2 + x[3]) + (3 + x[3])^2
+    return f
+end
+
+h=defineintricate()
+ForwardDiff.gradient(h,input)
+
+function paverobust(f,dim,vars,epsilon)
+    inte=IntervalBox(-1..1,dim)
+    listintervals=[inte]
+    width=2
+    tour=1
+
+    while width>epsilon
+        l=length(listintervals)
+        interval_to_check=popfirst!(listintervals)
+        for i in 1:l
+            rangejf=ForwardDiff.gradient(f,interval_to_check)
+            if outer_approx(rangejf,center,quantifiers)
+                return 0
+            else !(0 in inner_approx(rangejf,center,quantifiers))
+                left,right=bisect_at_component(interval_to_check,tour)
+                push!(listintervals,left,right)
+            end
+        end
+        if length(listintervals)==0
+            return 1
+        end
+        tour=(tour+1)%dim
+        width=last(listintervals).hi-last(listintervals).lo
+    end
+    return 0
+end
+
+
+function intervals_centers(intervals)
+    m=zeros(Float64,length(intervals))
+    for i in 1:length(intervals)
+        m[i]=(intervals[i].hi+intervals[i].lo)/2
+    end
+    return m
+end
+
+
+function bisect_at_component(interva, component::Int)
+    # Find the midpoint of the chosen dimension
+    a, b = interva[component].lo, interva[component].hi
+    m = (a + b) / 2
+
+    # Create two new intervals: one for each half of the bisection
+    left = copy(interva)
+    right = copy(interva)
+
+    # Split the component at the midpoint
+    left[component] = a..m
+    right[component] = m..b
+
+    return left, right
+end
 

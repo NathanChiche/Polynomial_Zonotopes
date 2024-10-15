@@ -260,6 +260,14 @@ ProfileView.@profview main()
 
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
+polyn=x^2+y
+fu(t)=polyn(x,y)
+typeof(fu)
+fu(1)(1,1)
+@variables va[1:2]
+fu2=build_function(fu,[va[i] for i=1:2],expression=Val{false})
+using ForwardDiff
+ForwardDiff.gradient(fu2,IntervalBox(-1..1,2))
 g=gens(S)
 ze=S(0)
 T,(x,y,z,s)=PolynomialRing(R,["x","y","z","s"])
