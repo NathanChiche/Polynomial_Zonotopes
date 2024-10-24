@@ -56,14 +56,14 @@ function polynomial_zonotopes_to_function(fpzonotope::PolynomialZonotope,pzonoto
     return symbolic_expr
 end
 
-res= polynomial_zonotopes_to_function(fP,P)
+#res= polynomial_zonotopes_to_function(fP,P)
 
 
 # Example Usage:
 # Define a Polynomial Zonotope
 ##SP = SimpleSparsePolynomialZonotope([2.0, 0], [1 0;0 2.], [1 4;1 2])
 
-R=RealField()
+"""R=RealField()
 S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
 
 P=get_SSPZ_from_polynomials([1+x+t,y+s])
@@ -79,5 +79,5 @@ nv=8
 pozon=SimpleSparsePolynomialZonotope([0 , 0.0],[1 0.0; 0 1],[1 0; 0 0; 1 0; 1 0; 0 1; 1 1])
 prod(xva[k]^pozon.E[k,2] for k in 1:4)
 prod(xva[k+2]^pozon.E[k,1] for k in 5:6)
-# Convert to symbolic representation
+# Convert to symbolic representation"""
 
