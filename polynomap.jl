@@ -35,12 +35,14 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         for p in 1:power 
             fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
         end
-
-        if inclusion_test(fPZ,PZ,0.9)
-            println("inclusion")
-            return fPZ
+        if i>=borne_union+1
+            inclusion=inclusion_test(fPZ,PZ,0.9)
+            @show(inclusion)
+            if inclusion!="false"
+                println("INCLUSION!")
+                return fPZ
+            end
         end
-        
         println("number of terms after the composition: ",size(fPZ.E)[2])
         #println("nb variables PZ_interm: ",size(fPZ.E)[1])
         #println("nombre de termes avant la réduction/après fonctionnelle: ",size(fPZ.E)[2])
@@ -62,7 +64,7 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
                 PZ=remove_unused_variables(PZ)
             else
                 #PZ=barycentric_join(PZ_previous,fPZ)
-                PZ=barycentre_union_simplifiee(PZ_previous,fPZ,solver)
+                PZ=barycentre_union_simplifiee(PZ_previous,fPZ,field)
                 #PZ=remove_useless_terms!(PZ) PAS BESOIN PUISQUE CEST DEJA DANS LE JOIN
             end
         else

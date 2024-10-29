@@ -261,6 +261,11 @@ plot([RSP1,SP2],nsdiv=25)
 plot_multiple([RSP2,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=1_ord=5")
 plot_multiple([RSP1,SP2],R,"Documents/julia/plots_julia/comparaisonreductionnor=2_ord=3")
 
-
+"""Tests pour join barycentrique simplifié"""
 R=RealField()
 S,(x,y)=PolynomialRing(R,["x","y"])
+Pyramide=get_SSPZ_from_polynomials(2*[x^2*y + 1.5*x^3,y^2+2*y*x])
+Pyramide2=get_SSPZ_from_polynomials([x*y,y+x+1])
+Joinpyramide=barycentre_union_simplifiee(Pyramide,Pyramide2,R)
+plot([Joinpyramide,Pyramide,Pyramide2],nsdiv=15)
+plot_multiple([Pyramide,Pyramide2],R,"Documents/julia/plots_julia/pourinclusion",nbpoints=300000)

@@ -66,7 +66,7 @@ function make_quant2(n1,n2) # C'est nul
     end
     return res
 end
-make_quant2(1,2)
+make_quant2(2,2)
 
 
 function O(range_Jf, i)
@@ -239,7 +239,7 @@ function paverobust(f,dim,nbvars,epsilon,quantifiers)
 
             if call_multiple_outers_bis(ranges,center,quantifiers)==false
                 println("pas dans la surapprox")
-                return 0
+                return "false"
             else 
                 vectinner=call_multiple_inners_bis(ranges,center,quantifiers)
                 #@show(vectinner)
@@ -260,7 +260,7 @@ function paverobust(f,dim,nbvars,epsilon,quantifiers)
 
         #@show(width)
     end
-    return 0
+    return "false"
 end 
 
 1/2
@@ -289,3 +289,12 @@ function defineintricate()
 end
 
 
+@variables var[1:3]
+fu=var[1]+1/2*var[2]+2*var[3]
+fun=build_function(fu,[var[j] for j=1:3],expression=Val{false})
+Symbolics.gradient(fu,var)
+
+
+@variables x, y, z, a, b, c
+u = a*(1 - 1/(1+(z/c)^2) *  exp(-2*(x^2 + y^2)/(b^2 * (1+(z/c)^2))))
+Symbolics.gradient(u, [x,y,z])

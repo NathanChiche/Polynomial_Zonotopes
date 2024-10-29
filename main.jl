@@ -29,6 +29,7 @@ include("polynomap.jl")
 include("matlabmatrix.jl")
 include("reduction.jl")
 include("bernstein.jl")
+include("testinclusion_robrange.jl")
 
 const to = TimerOutput();
 
@@ -112,9 +113,9 @@ function main()
     plouf1=x^2
     plouf2=y^2
     start_time = now()
-    fin=iterate_polynomials_over_PZ([lineaireex1,lineaireex2],Pellipso1,3,10,R,"bernstein",max_order=2000,power=1,solver="bernstein")
+    fin=iterate_polynomials_over_PZ([lineaire1,lineaire2],Plineaire,3,1,R,"bary",max_order=2000,power=1,solver="bernstein")
     
-    domain=IntervalBox(-1..1, 2)
+    #domain=IntervalBox(-1..1, 2)
     #=for i in 1:length(fin)-1
         println("Nombre d'iteration",i)
         @show(convergencebetweenlists(fin[i],fin[i+1],domain))
@@ -135,21 +136,19 @@ function main()
     #@show(get_polynomials_from_SSPZ(fin[2],R))
 
 
-
-
     end_time = now()
     elapsed = end_time - start_time
     println("temps des iterations:", elapsed)
-    #fin=reverse(fin)
-    fini=fin[end]
-    #fin=reverse(fin)
+    fin=reverse(fin)
+    #fini=fin[end]
+
     #println("nombre de variables à la fin: ",size((fini).E)[1])
     #println("nombre de monomes à la fin: ",size(fini.E)[2])
     #somme=sum(fini.E,dims=1)
     #som=vec(somme)
     #println("degré maximal à la fin: ",maximum(som))#affiche_liste(get_polynomials_from_SSPZ(fini,R))
 
-    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire1_bernsteinjoin2_4iter",nbpoints=40000)
+    plot_multiple(fin,R,"Documents/julia/plots_julia/lineaire1_barysimple_3iter_join_1",nbpoints=40000)
     #plot_sampling(fini,R,"Documents/julia/plots_julia/rotation^1_3iter_joinzonobernstein1_maxorder=2000_100000pts_",nbpoints=100000)
     
 

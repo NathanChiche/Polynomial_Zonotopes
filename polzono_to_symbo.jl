@@ -37,7 +37,7 @@ function polynomial_zonotopes_to_function(fpzonotope::PolynomialZonotope,pzonoto
         push!(symbolic_expr,temp_symbol_expr)
     end
 
-
+    @show(n_vars-dim)
     for i in 1:dim
         symbolic_expr[i] =  symbolic_expr[i] - center[i]
         for j in 1:n_generators
