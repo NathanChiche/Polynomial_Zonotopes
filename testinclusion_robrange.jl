@@ -290,10 +290,16 @@ end
 
 
 @variables var[1:3]
-fu=var[1]+1/2*var[2]+2*var[3]
+fu=var[1]+1/2*var[2]+2*var[3]^2
 fun=build_function(fu,[var[j] for j=1:3],expression=Val{false})
-Symbolics.gradient(fu,var)
-
+y=[var...]
+grad=Symbolics.gradient(fu,y)
+gradf=build_function(grad,[var[j] for j=1:3],expression=Val{false})
+typeof(gradf)
+inte=interval(-1..1)
+input=[inte for i in 1:3]
+gradf[1](input)
+fun(input)
 
 @variables x, y, z, a, b, c
 u = a*(1 - 1/(1+(z/c)^2) *  exp(-2*(x^2 + y^2)/(b^2 * (1+(z/c)^2))))
