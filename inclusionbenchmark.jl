@@ -40,5 +40,12 @@ function inclusion_basique()
     #FPZ=poly_apply_on_SSPZ(PZ,[x[1]^2,x[2]^2],R)
     
 end
-inclusion_basique()
-h
+
+function inclusion_geometrique()
+    R=RealField()
+    S,(x)=PolynomialRing(R,2)
+    PZ1=get_SSPZ_from_polynomials([x[1]^2+x[1]*x[2],x[1]*x[2]])
+    PZ2=get_SSPZ_from_polynomials([x[1],x[2]])
+end
+#inclusion_basique()
+#h
