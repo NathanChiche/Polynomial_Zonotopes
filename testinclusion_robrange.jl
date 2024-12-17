@@ -35,7 +35,9 @@ function outer_approx(range_Dg,center,quantifiers)
     p=length(quantifiers)
     for i in 0:p-1
         if quantifiers[p-i]=="exists"
+
             temp=O(range_Dg,p-i)
+            @show(temp)
             min=min+temp.lo
             max=max+temp.hi
         else
@@ -90,6 +92,7 @@ function centers(Polynomes1,Polynomes2,n1,n2)
 end
 
 function call_multiple_outers_bis(rangelist,centers,quantifiers)
+    @show(rangelist)
     #println("centers :",centers)
     intervals=[]
     #m=length(quantifiers)
@@ -138,6 +141,17 @@ function compute_derivatives_approx(fun,dim,intervalbox)
     return ranges
 end
 
+function compute_ranges(listgradient,dim,intervalbox)
+    ranges=[]
+    for a in 1:dim
+        @show(listgradient[a](intervalbox))
+        push!(ranges,listgradient[a](intervalbox))
+    end
+    println("range apres calcul sur boite 2d")
+    @show(ranges)
+    return ranges
+end
+
 
 function zeros_in_intervalvectors(intervals,dim)
     for o in 1:dim
@@ -173,7 +187,7 @@ function bisect_at_component(interva, component::Int)
     return left, right
 end
 
-function paverobust(f,dim,nbvars,epsilon,quantifiers)
+function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
     intervalbox=[interval(-1..1) for c in 1:nbvars]
     listintervalbox=[intervalbox]
     width=2.0
@@ -184,7 +198,9 @@ function paverobust(f,dim,nbvars,epsilon,quantifiers)
         for i in 1:l
             interval_to_check=popfirst!(listintervalbox)
             #@show(interval_to_check)
-            ranges=compute_derivatives_approx(f,dim,interval_to_check)
+            #@show(interval_to_check)
+            #ranges=compute_ranges(listgradie,dim,interval_to_check)
+            ranges=gcompute_derivatives_approx(f,dim,interval_to_check)
             #@show(ranges)
             center=[f[b](intervals_centers(interval_to_check)) for b in 1:dim]
             #@show(center)
@@ -218,8 +234,14 @@ end
 
 function inclusion_test(FPZ,PZ,epsilon)
     dim=length(PZ.c)
-    listfunc,listgrad,quantifiers,nbvars=polynomial_zonotopes_to_function(FPZ,PZ)
-    return paverobust(listfunc,dim,nbvars,epsilon,quantifiers)
+    listfunc,listgrad,quantifiers,nbvars=functionalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
+    inte=interval(-1..1)
+    intervalbox=[inte for i in 1:nbvars]
+    @show(nbvars)
+    @show(listgrad)
+    @show(listgrad[1](intervalbox))
+    @show(listgrad[2](intervalbox))
+    return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers)
 
 end
 

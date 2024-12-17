@@ -1,8 +1,35 @@
 using LazySets
 using Symbolics
 using Nemo
+using Combinatorics
 
 include("conversions.jl")
+
+function quant_and_varsorders(n1,n2)
+    indexbase=collect(1:n1)
+    nt=n1+n2
+    index=collect(n1+1:nt)
+    base=["forall" for j in 1:n1]
+    res=[]
+    for i in 1:n2-1
+        q1=vcat(base,["forall" for j in 1:i],["exists" for j in 1:n2-i])
+        q2=vcat(base,["forall" for j in 1:n2-i],["exists" for j in 1:i])
+        #@show(q1)
+        comb=collect(combinations(index,i))
+        #@show(comb)
+        #diff=setdiff(index,comb)
+        
+        for c in comb
+            #@show(c)
+            diff=setdiff(index,c)
+            #@show(diff)
+            ordersq1=vcat(indexbase,c,diff)
+            ordersq2=vcat(indexbase,diff,c)
+            push!(res,[[q1,ordersq1],[q2,ordersq2]])
+        end
+    end
+    return res
+end
 
 function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::PolynomialZonotope,pzonotope::PolynomialZonotope)
     """f(pZ) à gauche absolument"""
@@ -22,7 +49,7 @@ function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyno
     
     #create variables
     @variables var[1:n_vars+dim]
-    y=[vars...]
+    y=[var...]
 
     # Step 4: Construct symbolic polynomial expression
     # Initialize with the center
@@ -49,17 +76,22 @@ function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyno
     quantifiers=vcat(["forall" for i in 1:n_vars],["exists" for i in 1:dim])
     listfunctions=[]
     listgradient=[]
+    listg=[]
     for i in 1:dim
         f=build_function(symbolic_expr[i],[var[j] for j=1:n_vars+dim],expression=Val{false})
         push!(listfunctions,f)
         gradfsymbo=Symbolics.gradient(symbolic_expr[i],y)
+        @show(gradfsymbo)
+        push!(listg,gradfsymbo)
         gradfun=build_function(gradfsymbo,[y[j] for j=1:n_vars+dim],expression=Val{false})[1]
         push!(listgradient,gradfun)
 
     end
-    @show(symbolic_expr)
 
-    return listfunctions,listgradient,quantifiers,n_vars+dim
+    #@show(symbolic_expr)
+    @show(listg)
+    #return listg
+    return listfunctions,listgradient,quantifiers,n_vars+dim,listg
     return symbolic_expr
 end
 
@@ -83,6 +115,7 @@ function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyn
     
     #create variables
     @variables var[1:n_vars1+n_vars2]
+    y=[var...]
 
     # Step 4: Construct symbolic polynomial expression
     # Initialize with the center
@@ -90,32 +123,33 @@ function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyn
     
     # Add terms for each generator
     for i in 1:dim
-        temp_symbol_expr=fcenter[i]
+        temp_symbol_expr=fcenter[i]-center[i]
         for j in 1:nf_generators
             poly_term = fgenerators[i,j] * prod(var[k]^fexponents[k,j] for k in 1:n_vars1)
             temp_symbol_expr+=poly_term
         end
-        push!(symbolic_expr,temp_symbol_expr)
-    end
-
-    #@show(n_vars-dim)
-    for i in 1:dim
-        symbolic_expr[i] =  symbolic_expr[i] - center[i]
-        for j in 1:n_generators 
-            symbolic_expr[i]= symbolic_expr[i] - (generators[i,j] *prod(var[k+n_vars1]^exponents[k,j] for k in 1:n_vars2))
+        for j in 1:n_generators
+            poly_term = generators[i,j] * prod(var[k+n_vars1]^exponents[k,j] for k in 1:n_vars2)
+            temp_symbol_expr+=poly_term
         end
+        push!(symbolic_expr,temp_symbol_expr)
     end
 
     #quantifiers=vcat(["forall" for i in 1:n_vars1],["exists" for i in 1:dim])
 
     quantifier=quant_and_varsorders(n_vars1,n_vars2)
     listfunctions=[]
+    listgradient=[]
     for i in 1:dim
         f=build_function(symbolic_expr[i],[var[j] for j=1:n_vars1+n_vars2],expression=Val{false})
         push!(listfunctions,f)
+        gradfsymbo=Symbolics.gradient(symbolic_expr[i],y)
+        gradfun=build_function(gradfsymbo,[y[j] for j=1:n_vars1+n_vars2],expression=Val{false})[1]
+        push!(listgradient,gradfun)
     end
+
     @show(symbolic_expr)
-    return listfunctions,quantifier,n_vars1,n_vars2
+    return listfunctions,listgradient,quantifier,n_vars1,n_vars2
     return symbolic_expr
 end
 

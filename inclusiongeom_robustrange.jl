@@ -59,31 +59,7 @@ function mysetdiff(y, x)
 end
 collect(3:5)
 
-function quant_and_varsorders(n1,n2)
-    indexbase=collect(1:n1)
-    nt=n1+n2
-    index=collect(n1+1:nt)
-    base=["forall" for j in 1:n1]
-    res=[]
-    for i in 1:n2-1
-        q1=vcat(base,["forall" for j in 1:i],["exists" for j in 1:n2-i])
-        q2=vcat(base,["forall" for j in 1:n2-i],["exists" for j in 1:i])
-        #@show(q1)
-        comb=collect(combinations(index,i))
-        #@show(comb)
-        #diff=setdiff(index,comb)
-        
-        for c in comb
-            #@show(c)
-            diff=setdiff(index,c)
-            #@show(diff)
-            ordersq1=vcat(indexbase,c,diff)
-            ordersq2=vcat(indexbase,diff,c)
-            push!(res,[[q1,ordersq1],[q2,ordersq2]])
-        end
-    end
-    return res
-end
+
 
 
 
@@ -204,6 +180,14 @@ function gcompute_derivatives_approx(fun,dim,intervalbox)
     return ranges
 end
 
+function gcompute_ranges(listgradient,dim,intervalbox)
+    ranges=[]
+    for a in 1:dim
+        push!(ranges,listgradient[a](intervalbox))
+    end
+    return ranges
+end
+
 
 function gzeros_in_intervalvectors(intervals,dim)
     for o in 1:dim
@@ -253,7 +237,9 @@ function gpaverobust(f,dim,n_vars1,n_vars2,epsilon,quantifiers,listofvarsorderin
             #@show(listintervalbox)
             interval_to_check=popfirst!(listintervalbox)
             #@show(interval_to_check)
+            #ranges=gcompute_ranges(listgradie,dim,interval_to_check)
             ranges=gcompute_derivatives_approx(f,dim,interval_to_check)
+            @show(ranges)
             #@show(ranges)
             center=[f[b](gintervals_centers(interval_to_check)) for b in 1:dim]
             #@show(center)
@@ -289,9 +275,7 @@ end
 function geometrical_inclusion(FPZ,PZ,epsilon)
     dim=length(PZ.c)
     listfunc,quantif,nv1,nv2=geometricalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
-    
     for i in 1:length(quantif)
-
         listofquantifiers=collect(quantif[1][i][1] for i in 1:dim)
         listofvarsordering=collect(quantif[1][i][2] for i in 1:dim)
         if gpaverobust(listfunc,dim,nv1,nv2,epsilon,listofquantifiers,listofvarsordering)==1
