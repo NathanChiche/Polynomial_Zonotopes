@@ -130,7 +130,7 @@ function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyn
         end
         for j in 1:n_generators
             poly_term = generators[i,j] * prod(var[k+n_vars1]^exponents[k,j] for k in 1:n_vars2)
-            temp_symbol_expr+=poly_term
+            temp_symbol_expr-=poly_term
         end
         push!(symbolic_expr,temp_symbol_expr)
     end

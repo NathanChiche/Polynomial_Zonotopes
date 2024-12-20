@@ -101,15 +101,24 @@ function ginner_approx(range_Dg,center,quantifiers,varsordering)
     p=length(quantifiers)
     for i in 0:p-1
         if quantifiers[varsordering[p-i]]=="exists"
+            #println("exists")
+            #@show(min,max)
             temp=gI(range_Dg,p-i)
+            #@show(temp)
             #@show(p-i,temp)
             min=min+temp.lo
             max=max+temp.hi
+            #println("after expansion")
+            #@show(min,max)
         else
             temp=gO(range_Dg,p-i)
+            #println("forall")
+            #@show(temp)
             #@show(p-i,temp)
             min=min+temp.hi
             max=max+temp.lo
+            #println("after reduction")
+            #@show(min,max)
             if max<min
                 #println("resultat de sous-approx vide")
                 return "false"
@@ -156,6 +165,7 @@ function gcall_multiple_inners_bis(rangelist,centers,quantifierslist,listofvarso
     #m=length(x)
     for j in 1:length(rangelist)
         i=ginner_approx(rangelist[j],centers[j],quantifierslist[j],listofvarsordering[j])
+        #@show(i)
         if !(0 in i) || i=="false"
             #println("0 n'est pas dans l'inner pour quant: ",quantifiers)
             return "false"
@@ -239,7 +249,7 @@ function gpaverobust(f,dim,n_vars1,n_vars2,epsilon,quantifiers,listofvarsorderin
             #@show(interval_to_check)
             #ranges=gcompute_ranges(listgradie,dim,interval_to_check)
             ranges=gcompute_derivatives_approx(f,dim,interval_to_check)
-            @show(ranges)
+            #@show(ranges)
             #@show(ranges)
             center=[f[b](gintervals_centers(interval_to_check)) for b in 1:dim]
             #@show(center)
@@ -249,7 +259,7 @@ function gpaverobust(f,dim,n_vars1,n_vars2,epsilon,quantifiers,listofvarsorderin
                 return "false"
             else 
                 vectinner=gcall_multiple_inners_bis(ranges,center,quantifiers,listofvarsordering)
-                @show(vectinner)
+                #@show(vectinner)
                 if vectinner=="false"
                     left,right=gbisect_at_component(interval_to_check,tour)
                     push!(listintervalbox,left,right)
@@ -274,10 +284,12 @@ end
 
 function geometrical_inclusion(FPZ,PZ,epsilon)
     dim=length(PZ.c)
-    listfunc,quantif,nv1,nv2=geometricalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
+    listfunc,listgrad,quantif,nv1,nv2=geometricalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
+    @show(quantif)
     for i in 1:length(quantif)
         listofquantifiers=collect(quantif[1][i][1] for i in 1:dim)
         listofvarsordering=collect(quantif[1][i][2] for i in 1:dim)
+        println("SOOOOOOOOOOOOOOOOOOOOOO")
         if gpaverobust(listfunc,dim,nv1,nv2,epsilon,listofquantifiers,listofvarsordering)==1
             return true
         end
