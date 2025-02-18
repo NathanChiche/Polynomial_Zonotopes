@@ -8,19 +8,6 @@ using ForwardDiff
 include("polzono_to_symbo.jl")
 
 
-function find_range_derivatives(g,nb_vars,v)
-    #g=x[1]^2/4 + (x[2]+1)*(x[3]+2) + (x[3]+3)^2
-    #@variables v[1:nb_vars]
-    inp = #=@SVector=# [@interval(-1.0,1.0) for i= 1:nb_vars] # CAREFUL, range is evaluated at global scope 
-    Dg = Symbolics.jacobian([g], [v[i] for i=1:nb_vars])
-    Dg_expr = build_function(Dg, [v[i] for i=1:nb_vars], expression = Val{false})
-    my_Dg = eval(Dg_expr[1])
-    #return my_Dg
-    range_Dg = my_Dg(inp)
-    return range_Dg
-end
-
-
 function O(range_Jf, i)
     return @interval(-(abs(range_Jf[i]).hi),abs(range_Jf[i]).hi)
 end
@@ -198,9 +185,8 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
         for i in 1:l
             interval_to_check=popfirst!(listintervalbox)
             #@show(interval_to_check)
-            #@show(interval_to_check)
             #ranges=compute_ranges(listgradie,dim,interval_to_check)
-            ranges=gcompute_derivatives_approx(f,dim,interval_to_check)
+            ranges=compute_derivatives_approx(f,dim,interval_to_check)
             #@show(ranges)
             center=[f[b](intervals_centers(interval_to_check)) for b in 1:dim]
             #@show(center)
@@ -237,8 +223,7 @@ function inclusion_test(FPZ,PZ,epsilon)
     listfunc,listgrad,quantifiers,nbvars=functionalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
     inte=interval(-1..1)
     intervalbox=[inte for i in 1:nbvars]
-    @show(nbvars)
-    @show(listgrad)
+    
     @show(listgrad[1](intervalbox))
     @show(listgrad[2](intervalbox))
     return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers)
@@ -253,20 +238,6 @@ function test_primal() #ATTENTION: plutôt gros problème sur la tête des range
     inclusion_test(pol1,pol2)
 end
 
-
-
-
-@variables var[1:3]
-fu=var[1]+1/2*var[2]+2*var[3]^2
-fun=build_function(fu,[var[j] for j=1:3],expression=Val{false})
-y=[var...]
-grad=Symbolics.gradient(fu,y)
-gradf=build_function(grad,[var[j] for j=1:3],expression=Val{false})
-typeof(gradf)
-inte=interval(-1..1)
-input=[inte for i in 1:3]
-gradf[1](input)
-fun(input)
 
 @variables x, y, z, a, b, c
 u = a*(1 - 1/(1+(z/c)^2) *  exp(-2*(x^2 + y^2)/(b^2 * (1+(z/c)^2))))
