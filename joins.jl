@@ -294,6 +294,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)#PAS VERIFIEE
         a1(x)=sum(GP1[i,j]*prod(x[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ1.c[i]
         push!(ranges1,enclose(a1,domain,sol))
     end
+    @show(ranges1)
 
     domain=IntervalBox(-1..1, f1)
     ranges2=[]
@@ -301,7 +302,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)#PAS VERIFIEE
         a2(x)=sum(GP2[i,j]*prod(x[k]^PZ2.E[k,j] for k in 1:f1) for j in 1:m2)+PZ2.c[i]
         push!(ranges2,enclose(a2,domain,sol))
     end
-
+    @show(ranges2)
     center=zeros(n1)
     
     for i in 1:n1
@@ -431,13 +432,13 @@ function zonotopic_join(PZ1,PZ2,solver)
     for i in 1:n1 #WE HAVE TO ADD THE CENTER TO THE COMPUTED RANGES
         ranges1[i]=ranges1[i] .+ PZ1.c[i]
     end
-    #@show(ranges1)
+    @show(ranges1)
     domain=IntervalBox(-1..1, f1)
     ranges2=ranges_from_Bernsteincoeff(GP2,PZ2.E,domain)[1]
     for i in 1:n1
         ranges2[i]=ranges2[i] .+ PZ2.c[i]
     end
-    #@show(ranges2)
+    @show(ranges2)
 
     center=zeros(n1)
     
@@ -445,7 +446,7 @@ function zonotopic_join(PZ1,PZ2,solver)
         mini=min(ranges1[i][1],ranges2[i][1])
         maxi=max(ranges1[i][2],ranges2[i][2])
         mid=Float64(1/2*(mini+maxi))
-        #@show(mini,maxi,mid)
+        @show(mini,maxi,mid)
         #println(mini," ", maxi," ", mid)
         center[i]=mid
         z=zeros(Int64,n1+e1)
@@ -461,7 +462,6 @@ function zonotopic_join(PZ1,PZ2,solver)
 
 end
 
-[1, 2,3 ,4].-(2+4)/2
 
 function bernstein_zonotopic_join(PZ1,PZ2,field)
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
@@ -500,18 +500,7 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
         
         A=min(ranges1[i][1],ranges2[i][1])
         B=max(ranges1[i][2],ranges2[i][2])
-        #@show(A,B)
-        #shift=-(A+B)/2
-        #@show(shift)
-        #@show(coeffs1[i])
-        #@show(coeffs2[i])
-        #coeffs1[i]=coeffs1[i].+(c1[i]+shift)
-        #coeffs2[i]=coeffs2[i].+(c2[i]+shift)
-        #println("modif des coeffs")
-        #@show(coeffs1[i])
-        #@show(coeffs2[i])
-        #Ashift=A+shift
-        #Bshift=B+shift
+
         println("coucou")
         coeffs1[i]=coeffs1[i] .+ c1[i]
         coeffs2[i]=coeffs2[i] .+ c2[i]

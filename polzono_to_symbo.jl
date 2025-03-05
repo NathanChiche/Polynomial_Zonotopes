@@ -73,6 +73,8 @@ function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyno
         end
     end
 
+    @show(symbolic_expr)
+
     quantifiers=vcat(["forall" for i in 1:n_vars],["exists" for i in 1:dim])
     listfunctions=[]
     listgradient=[]

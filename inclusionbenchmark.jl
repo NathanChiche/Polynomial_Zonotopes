@@ -18,8 +18,8 @@ println("_____________________________________________")
 function inclusion_lineaire_fonctionnelle()
     R=RealField()
     S,(x)=PolynomialRing(R,4)
-    PZ=get_SSPZ_from_polynomials([x[1]+x[3],x[2]+x[4]])
-    FPZ=get_SSPZ_from_polynomials([(x[1]+x[3]),(x[2]+x[4])])
+    PZ=get_SSPZ_from_polynomials([x[1],x[2]])
+    FPZ=get_SSPZ_from_polynomials([0.9*(x[1]),0.9*(x[2])])
 
 
     return inclusion_test(FPZ,PZ,1.1)
@@ -40,6 +40,7 @@ function inclusion_lineaire_fonctionnelle2()
     #FPZ=poly_apply_on_SSPZ(PZ,[x[1]^2,x[2]^2],R)
     
 end
+#inclusion_lineaire_fonctionnelle2()
 
 function inclusion_lineaire_geometrique(epsilon)
     R=RealField()
@@ -52,7 +53,7 @@ function inclusion_lineaire_geometrique(epsilon)
     #FPZ=poly_apply_on_SSPZ(PZ,[x[1]^2,x[2]^2],R)
     
 end
-#inclusion_lineaire_geometrique()
+inclusion_lineaire_geometrique()
 
 println("_____________________________________________")
 

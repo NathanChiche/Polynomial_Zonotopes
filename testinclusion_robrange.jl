@@ -7,30 +7,22 @@ using ForwardDiff
 
 include("polzono_to_symbo.jl")
 
-
-function O(range_Jf, i)
-    return @interval(-(abs(range_Jf[i]).hi),abs(range_Jf[i]).hi)
-end
-
-function I(range_Jf,i)
-    return @interval(-(abs(range_Jf[i]).lo),abs(range_Jf[i]).lo)
-end
-
-function outer_approx(range_Dg,center,quantifiers)
+function outer_approx(absrange_Dg,center,quantifiers,interval_to_check)
     min=center
     max=center
     p=length(quantifiers)
     for i in 0:p-1
         if quantifiers[p-i]=="exists"
 
-            temp=O(range_Dg,p-i)
-            @show(temp)
-            min=min+temp.lo
-            max=max+temp.hi
+            temp=(absrange_Dg[p-i].hi)*(interval_to_check[p-i].hi-interval_to_check[p-i].lo)/2
+            #@show(p-i,temp)
+            min=min-temp
+            max=max+temp
         else
-            temp=I(range_Dg,p-i)
-            min=min+temp.hi
-            max=max+temp.lo
+            temp=(absrange_Dg[p-i].lo)*(interval_to_check[p-i].hi-interval_to_check[p-i].lo)/2
+            #@show(p-i,temp)
+            min=min+temp
+            max=max-temp
             if max<min
                 #println("resultat de sur-approx vide")
                 return "false"
@@ -42,21 +34,26 @@ function outer_approx(range_Dg,center,quantifiers)
     return interval(min,max)
 end
 
-function inner_approx(range_Dg,center,quantifiers)
+function inner_approx(absrange_Dg,center,quantifiers,interval_to_check)
     min=center
     max=center
     p=length(quantifiers)
+    #@show(interval_to_check)
     for i in 0:p-1
         if quantifiers[p-i]=="exists"
-            temp=I(range_Dg,p-i)
+            #println("exists")
+            #@show(absrange_Dg[p-i].lo)
+            temp=(absrange_Dg[p-i].lo)*(interval_to_check[p-i].hi-interval_to_check[p-i].lo)/2
             #@show(p-i,temp)
-            min=min+temp.lo
-            max=max+temp.hi
+            min=min-temp
+            max=max+temp
         else
-            temp=O(range_Dg,p-i)
+            #println("forall")
+            #@show(absrange_Dg[p-i].hi)
+            temp=(absrange_Dg[p-i].hi)*(interval_to_check[p-i].hi-interval_to_check[p-i].lo)/2
             #@show(p-i,temp)
-            min=min+temp.hi
-            max=max+temp.lo
+            min=min+temp
+            max=max-temp
             if max<min
                 #println("resultat de sous-approx vide")
                 return "false"
@@ -78,13 +75,13 @@ function centers(Polynomes1,Polynomes2,n1,n2)
     return centers
 end
 
-function call_multiple_outers_bis(rangelist,centers,quantifiers)
-    @show(rangelist)
+function call_multiple_outers_bis(rangelist,centers,quantifiers,interval_to_check)
+    #@show(rangelist)
     #println("centers :",centers)
     intervals=[]
     #m=length(quantifiers)
     for j in 1:length(rangelist)
-        i=outer_approx(rangelist[j],centers[j],quantifiers)
+        i=outer_approx(rangelist[j],centers[j],quantifiers,interval_to_check)
         if !(0 in i)
             #println("0 n'est même pas dans l'outer approx")
             return "false"
@@ -97,13 +94,13 @@ end
 
 
 
-function call_multiple_inners_bis(rangelist,centers,quantifiers)
+function call_multiple_inners_bis(rangelist,centers,quantifiers,interval_to_check)
     #println("on entre dans la sous approx multidimensionnelle")
     #println("centers :",centers)
     intervals=[]
     #m=length(x)
     for j in 1:length(rangelist)
-        i=inner_approx(rangelist[j],centers[j],quantifiers)
+        i=inner_approx(rangelist[j],centers[j],quantifiers,interval_to_check)
         if !(0 in i) || i=="false"
             #println("0 n'est pas dans l'inner pour quant: ",quantifiers)
             return "false"
@@ -128,14 +125,32 @@ function compute_derivatives_approx(fun,dim,intervalbox)
     return ranges
 end
 
-function compute_ranges(listgradient,dim,intervalbox)
-    ranges=[]
-    for a in 1:dim
-        @show(listgradient[a](intervalbox))
-        push!(ranges,listgradient[a](intervalbox))
+function compute_ranges(gradient,intervalbox,quantifiers,intervalboxcenters)
+    n=length(quantifiers)
+    ranges=Array{IntervalArithmetic.Interval{Float64}}(undef,n)
+    centered_interval=copy(intervalbox)
+    for k in 1:n
+        if quantifiers[k]=="exists"
+            centered_interval[k]=intervalboxcenters[k]
+        end
     end
-    println("range apres calcul sur boite 2d")
-    @show(ranges)
+    #NOW centered_interval equals our intervalbox where all existentially quantified variables are "reduced to their center"
+    for k in 1:n
+        if quantifiers[k]=="exists"
+          
+            ranges[k]=abs.(gradient(intervalbox)[k])
+        else    
+            """println("else")
+            println("ligne1")
+            @show(gradient(centered_interval))
+            println("ligne2")
+            @show(gradient[1])
+            println("ligne3")"""
+            ranges[k]=abs.(gradient(centered_interval)[k]) # we apply strictly the theorem 2 form goubault putot 2020 which states we can evaluate in the center of the existentially quantified variables
+        end
+    end
+    #println("range apres calcul sur boite 2d")
+    #@show(ranges)
     return ranges
 end
 
@@ -170,7 +185,6 @@ function bisect_at_component(interva, component::Int)
     # Split the component at the midpoint
     left[component] = a..m
     right[component] = m..b
-
     return left, right
 end
 
@@ -182,20 +196,22 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
     #@show(dim,nbvars)
     while width>epsilon
         l=length(listintervalbox)
+        #@show(l)
         for i in 1:l
             interval_to_check=popfirst!(listintervalbox)
             #@show(interval_to_check)
             #ranges=compute_ranges(listgradie,dim,interval_to_check)
-            ranges=compute_derivatives_approx(f,dim,interval_to_check)
-            #@show(ranges)
+            intervcenters=intervals_centers(interval_to_check)
+            rangelist=[compute_ranges(listgradie[k],interval_to_check,quantifiers,intervcenters) for k in 1:dim]
+            #@show(rangelist)
             center=[f[b](intervals_centers(interval_to_check)) for b in 1:dim]
             #@show(center)
 
-            if call_multiple_outers_bis(ranges,center,quantifiers)==false
+            if call_multiple_outers_bis(rangelist,center,quantifiers,interval_to_check)==false
                 println("pas dans la surapprox")
                 return "false"
             else 
-                vectinner=call_multiple_inners_bis(ranges,center,quantifiers)
+                vectinner=call_multiple_inners_bis(rangelist,center,quantifiers,interval_to_check)
                 #@show(vectinner)
                 if vectinner=="false"
                     left,right=bisect_at_component(interval_to_check,tour)
@@ -224,8 +240,8 @@ function inclusion_test(FPZ,PZ,epsilon)
     inte=interval(-1..1)
     intervalbox=[inte for i in 1:nbvars]
     
-    @show(listgrad[1](intervalbox))
-    @show(listgrad[2](intervalbox))
+    #@show(listgrad[1](intervalbox))
+    #@show(listgrad[2](intervalbox))
     return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers)
 
 end
@@ -237,9 +253,4 @@ function test_primal() #ATTENTION: plutôt gros problème sur la tête des range
     pol2=[3*x^2+5*x]
     inclusion_test(pol1,pol2)
 end
-
-
-@variables x, y, z, a, b, c
-u = a*(1 - 1/(1+(z/c)^2) *  exp(-2*(x^2 + y^2)/(b^2 * (1+(z/c)^2))))
-Symbolics.gradient(u, [x,y,z])
 

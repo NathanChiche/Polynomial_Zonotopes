@@ -48,3 +48,14 @@ function plot_multiple(liste_PZ,field::Field,filename::String;nbpoints=300000,xl
     end
     savefig(filename)
 end
+
+
+#=pas=1/10
+pointspas=collect(rand(-1.0:pas:1.0,5) for i in 1:100)
+@show(pointspas)
+
+pointspas2=collect(rand(-1.0:1.0,3) for i in 1:10)
+@show(pointspas2)
+
+@time pointspas=collect(rand(-1.0:1/10000:1.0,5) for i in 1:100000)
+@time samples = [rand(3) .* 2 .- 1 for _ in 1:100000]=#
