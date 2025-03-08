@@ -2,10 +2,10 @@ function compose(p,list_poly)
     return evaluate(p,list_poly)
 end
 
-function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Field)
+function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Nemo.Field)
     nb_vars=size(expmat(PZ))[1]#nombre de variables est le nombre de lignes de la matrice des exposants
     composit=[]
-    #anneau,(x)=PolynomialRing(field,nb_vars)
+    #anneau,(x)=polynomial_ring(field,nb_vars)
     Poly_fromPZ=get_polynomials_from_SSPZ(PZ,field)
     #anneau=parent(Poly_fromPZ[1])
     #println("On va entrer dans la composition de l'application")
@@ -20,7 +20,7 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
     return get_SSPZ_from_polynomials(composit)
 end
 
-function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein")
+function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein")
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     #println("on entre dans l'itération")
     i=0

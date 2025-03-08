@@ -29,13 +29,16 @@ include("reduction.jl")
 include("bernstein.jl")
 include("testinclusion_robrange.jl")
 
+R=RealField()
+Annea,(x,y)=polynomial_ring(R,["x","y"])
+
 function lineairenonconverge()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
     f1=-0.032*x -0.3968*y
     f2=0.5208*x + 0.712*y
     Pstart=get_SSPZ_from_polynomials([3*x,3*y])
-    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,2,1,R,"zono",max_order=200000,inclusiontest=1,solver="bernstein")
+    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,3,1,R,"bernstein",max_order=200000,inclusiontest=1,solver="bernstein")
     popfirst!(fin)
     fini=fin[end]
     #@show(get_polynomials_from_SSPZ(fin[1],R))
@@ -48,6 +51,7 @@ function lineairenonconverge()
 
 end
 @time lin,next=lineairenonconverge()
+ plot(lin,next)
 
 
 #plot_multiple(lin,R,"Documents/julia/plots_julia/lineaire1_zono_5iter_join7decal",nbpoints=800000)
@@ -57,7 +61,7 @@ plot([lin,next],nsdiv=18)
 
 function lineaireconverge()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
     f1=-0.32*x + 0.32*y
     f2=-0.42*x - 0.92*y
     Pstart=get_SSPZ_from_polynomials([2*x-5,1.5*y+1])
@@ -71,7 +75,7 @@ end
 
 function henon()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
     a=0.2
     b=1
     h1=y+1-a*x^2
@@ -90,7 +94,7 @@ end
 
 function polynomialnonconverge()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
 
     p1=1/4*(x+x^2)
     p2=1/4*(y+x)
@@ -108,13 +112,13 @@ res=polynomialnonconverge()
 
 function exemplejoinzono()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
 
     p1=1/4*(x+x^2)
     p2=1/4*(y+x)
     Pstart=get_SSPZ_from_polynomials([x; y])
     fPstart=poly_apply_on_SSPZ(Pstart,[p1,p2],R)
-    S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
+    S,(x,y,s,t)=polynomial_ring(R,["x","y","s","t"])
     J=get_SSPZ_from_polynomials([x/16 + 5*x^2/64 + 217/704 + 289/704*s, y/16 + x/8 + 10/16*t])
 
     return fPstart,FPZ,J
@@ -127,7 +131,7 @@ plot([J,fPstart,FPZ],nsdiv=20)
 
 function testjoinzonopolynomial()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
 
     p1=1/4*(x+x^2)
     p2=1/4*(y+x)

@@ -54,8 +54,6 @@ function list_nemo_multivbernstein(geners,maxdeg,domain)
 end
 
 
-
-
 function polynomial_from_bernstein_coeffs(Anneau,maxdeg,domain,listcoeffs)
     geners=gens(Anneau)
     nemobernstein=list_nemo_multivbernstein(geners,maxdeg,domain)
@@ -102,12 +100,16 @@ end
 function list_monomials(Expo)
     n1,n2=size(Expo)
     @polyvar x[1:n1]
-    listmonomials=Array{Monomial}(undef,n2)
+    listmonomials=Array{any}(undef,n2)
     for i in 1:n2
-        listmonomials[i]=Monomial(x,Expo[:,i])
+        listmonomials[i]=MultivariatePolynomials.monomial(x,Expo[:,i])
     end
 
     return listmonomials
+end
+
+function make_monomial(vars, exponents::AbstractVector{Int})
+    prod(vars[i]^exponents[i] for i in eachindex(vars))
 end
 
 function findmaxdeg_listmono(Expo)
@@ -119,14 +121,15 @@ function findmaxdeg_listmono(Expo)
     end
 
     @polyvar x[1:n1]
-    listmonomials=Array{Monomial}(undef,n2)
+    #listmonomials=Array{any}(undef,n2)
+    listmonomials=[]
     for i in 1:n2
-        listmonomials[i]=Monomial(x,Expo[:,i])
+        #listmonomials[i]=MultivariatePolynomials.monomial(x,Expo[:,i])
+        push!(listmonomials,make_monomial(x,Expo[:,i]))
     end
 
     return maxdeg,listmonomials
 end
-
 
 function every_multivariate_bernsteincoeff(Expo,domain,maxdegr,listmono)
     
@@ -142,8 +145,6 @@ function every_multivariate_bernsteincoeff(Expo,domain,maxdegr,listmono)
     return All
 end
 
-ll=[[1 , 1,3], [2 , 2,2]]
-length(ll)
 
 function convergencebetweenlists(P1,P2)
 
@@ -160,7 +161,7 @@ function convergencebetweenlists(P1,P2)
         ll2[i]=ll1[i].+P2.c[i]
     end
     R=RealField()
-    An,(x,y)=PolynomialRing(R,["x","y"])
+    An,(x,y)=polynomial_ring(R,["x","y"])
     diff=Array{Vector{Float64}}(undef,l)
     absolconv=Array{Float64}(undef,l)
     for i in 1:l
@@ -354,7 +355,7 @@ findmaxdeg_listmono(E)
 dom
 inte=IntervalBox(0..1,2)
 @polyvar x[1:2]
-test=Monomial(x,[1,1])
+test=monomial(x,[1,1])
 ber=multivariate(test,[1,1],inte)
 everyproducts(ber)
 

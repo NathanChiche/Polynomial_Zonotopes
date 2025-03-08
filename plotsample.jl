@@ -2,7 +2,7 @@ function evaluate_polynomials_on_vector(polynomials,vector::Vector{Float64})
     return [Float64(evaluate(polynomials[i],vector)) for i in 1:length(polynomials)]
 end
 
-function plot_sampling(PZ::SimpleSparsePolynomialZonotope,field::Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
+function plot_sampling(PZ::SimpleSparsePolynomialZonotope,field::Nemo.Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
     """enregistre dans filename le tracé de PZ avec nbpoints différents"""
     nb_vars=size(expmat(PZ))[1]
     nb=size(genmat(PZ))[1]
@@ -18,7 +18,7 @@ function plot_sampling(PZ::SimpleSparsePolynomialZonotope,field::Field,filename:
     return pl
 end    
 
-function plot_multiple(liste_PZ,field::Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
+function plot_multiple(liste_PZ,field::Nemo.Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
     i=1
     for PZ in liste_PZ
         println("coucou")

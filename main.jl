@@ -35,7 +35,7 @@ const to = TimerOutput();
 
 function main()
     R=RealField()
-    S,(x,y)=PolynomialRing(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
 
     p1=x^3 -0.5*x^2+0.5
     p2=y^3 -0.5*y^2+0.5
@@ -246,7 +246,7 @@ ProfileView.@profview main()
 
 
 R=RealField()
-S,(x,y)=PolynomialRing(R,["x","y"])
+S,(x,y)=polynomial_ring(R,["x","y"])
 polyn=x^2+y
 fu(t)=polyn(x,y)
 typeof(fu)
@@ -257,7 +257,7 @@ using ForwardDiff
 ForwardDiff.gradient(fu2,IntervalBox(-1..1,2))
 g=gens(S)
 ze=S(0)
-T,(x,y,z,s)=PolynomialRing(R,["x","y","z","s"])
+T,(x,y,z,s)=polynomial_ring(R,["x","y","z","s"])
 zer=T(ze)
 g[1]*g[2]
 using BernsteinExpansions
@@ -347,7 +347,7 @@ end
 ProfileView.@profview looping(ZO)
 
 R=RealField()
-S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
+S,(x,y,s,t)=polynomial_ring(R,["x","y","s","t"])
 
 Trian2=get_SSPZ_from_polynomials([x*y,x])
 overapproximate(Trian2, Zonotope)
@@ -363,7 +363,7 @@ plot_multiple([Trian5,Trian6],R,"Documents/julia/plots_julia/exemplepourjoinVSco
 Trian3.G
 
 @view Trian3.G[1,:]==@view Trian3.G[2,:]
-A,(x,y)=PolynomialRing(R,["x","y"])
+A,(x,y)=polynomial_ring(R,["x","y"])
 Test1=get_SSPZ_from_polynomials([x+y,-0.5+x^2])
 Test2=get_SSPZ_from_polynomials([x+y+x^2-0.5,(x+y)^2])
 get_polynomials_from_SSPZ(union_pol_zono(Test1,Test2,R),R)

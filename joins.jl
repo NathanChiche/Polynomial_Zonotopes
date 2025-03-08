@@ -143,7 +143,7 @@ function union_pol_zono(PZ1,PZ2,field)
     Polynomes2=get_polynomials_from_SSPZ(PZ2,field)
     nb_vars=size(expmat(PZ1))[1]
     nb=size(genmat(PZ1))[1]
-    Anneau,(x)=PolynomialRing(field,nb_vars+nb) # on sait qu'on va ajouter autant de variables qu'il y a de formes polynomiales dans le vecteur
+    Anneau,(x)=polynomial_ring(field,nb_vars+nb) # on sait qu'on va ajouter autant de variables qu'il y a de formes polynomiales dans le vecteur
     poly_union=[Anneau(0) for i in 1:nb]
     l=length(exponent_vector(Polynomes1[1],1))
     zero=zeros(Int64,l)
@@ -491,7 +491,7 @@ function bernstein_zonotopic_join(PZ1,PZ2,field)
     @show(ranges1,ranges2)
     h=[]
     nbcoeffs=length(coeffs1[1])
-    Anneau,(x)=PolynomialRing(field,e1+dim)
+    Anneau,(x)=polynomial_ring(field,e1+dim)
     @show(coeffs1)
     @show(coeffs2)
     
@@ -593,7 +593,7 @@ function copy_poly(pol,Anneau)
 end
 
 
-function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Field)
+function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Nemo.Field)
     """union barycentrique entre PZ1 et PZ2"""
     nb=size(genmat(PZ1))[1]
     nb_vars=max(size(expmat(PZ1))[1],size(expmat(PZ2))[1])
@@ -602,7 +602,7 @@ function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparseP
     #println("nombre de var: ", length(gens(parent(Polynomes1[1]))))
     Polynomes2=get_polynomials_from_SSPZ(PZ2,field)
     #println("nombre de var: ", length(gens(parent(Polynomes2[1]))))
-    Anneau,(x)=PolynomialRing(field,nb_vars+1)
+    Anneau,(x)=polynomial_ring(field,nb_vars+1)
     Polynomes=[Anneau(0) for i in 1:nb]
     for i in 1:nb
         Polynomes[i]=(1/2*gens(Anneau)[nb_vars+1] + 1/2)*copy_poly(Polynomes1[i],Anneau) + copy_poly(Polynomes2[i],Anneau)*(1/2 - 1/2*gens(Anneau)[nb_vars+1])
@@ -610,7 +610,7 @@ function barycentre_union(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparseP
     return get_SSPZ_from_polynomials(Polynomes)
 end
 
-function barycentre_union_simplifiee(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Field)
+function barycentre_union_simplifiee(PZ1::SimpleSparsePolynomialZonotope,PZ2::SimpleSparsePolynomialZonotope,field::Nemo.Field)
     """union barycentrique entre PZ1 et PZ2"""
     dim=size(genmat(PZ1))[1]
     nb_vars=max(size(expmat(PZ1))[1],size(expmat(PZ2))[1])
@@ -619,7 +619,7 @@ function barycentre_union_simplifiee(PZ1::SimpleSparsePolynomialZonotope,PZ2::Si
     #println("nombre de var: ", length(gens(parent(Polynomes1[1]))))
     Polynomes2=get_polynomials_from_SSPZ(PZ2,field)
     #println("nombre de var: ", length(gens(parent(Polynomes2[1]))))
-    Anneau,(x)=PolynomialRing(field,nb_vars+2)
+    Anneau,(x)=polynomial_ring(field,nb_vars+2)
     Polynomes=[Anneau(0) for i in 1:dim]
     for i in 1:dim
         Polynomes[i]=(1/2*gens(Anneau)[nb_vars+i] + 1/2)*copy_poly(Polynomes1[i],Anneau) + copy_poly(Polynomes2[i],Anneau)*(1/2 - 1/2*gens(Anneau)[nb_vars+i])

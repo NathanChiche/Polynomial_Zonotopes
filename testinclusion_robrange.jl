@@ -1,7 +1,7 @@
 using Symbolics
 using Nemo
 using IntervalArithmetic
-using StaticArrays
+#using StaticArrays
 using Combinatorics
 using ForwardDiff
 
@@ -125,32 +125,36 @@ function compute_derivatives_approx(fun,dim,intervalbox)
     return ranges
 end
 
+
 function compute_ranges(gradient,intervalbox,quantifiers,intervalboxcenters)
     n=length(quantifiers)
     ranges=Array{IntervalArithmetic.Interval{Float64}}(undef,n)
     centered_interval=copy(intervalbox)
     for k in 1:n
         if quantifiers[k]=="exists"
-            centered_interval[k]=intervalboxcenters[k]
+            if typeof(intervalboxcenters[k])!= IntervalArithmetic.Interval
+                centered_interval[k]=intervalboxcenters[k]..intervalboxcenters[k]
+            else
+                centered_interval[k]=intervalboxcenters[k]
+            end
         end
     end
     #NOW centered_interval equals our intervalbox where all existentially quantified variables are "reduced to their center"
     for k in 1:n
         if quantifiers[k]=="exists"
-          
-            ranges[k]=abs.(gradient(intervalbox)[k])
+            if typeof(abs.(gradient(intervalbox)[k]))!= IntervalArithmetic.Interval
+                ranges[k]=abs.(gradient(intervalbox)[k])..abs.(gradient(intervalbox)[k])
+            else
+                ranges[k]=abs.(gradient(intervalbox)[k])
+            end
         else    
-            """println("else")
-            println("ligne1")
-            @show(gradient(centered_interval))
-            println("ligne2")
-            @show(gradient[1])
-            println("ligne3")"""
-            ranges[k]=abs.(gradient(centered_interval)[k]) # we apply strictly the theorem 2 form goubault putot 2020 which states we can evaluate in the center of the existentially quantified variables
+            if typeof(abs.(gradient(centered_interval)[k]))!= IntervalArithmetic.Interval
+                ranges[k]=abs.(gradient(centered_interval)[k])..abs.(gradient(centered_interval)[k])
+            else 
+                ranges[k]=abs.(gradient(centered_interval)[k]) # we apply strictly the theorem 2 form goubault putot 2020 which states we can evaluate in the center of the existentially quantified variables
+            end
         end
     end
-    #println("range apres calcul sur boite 2d")
-    #@show(ranges)
     return ranges
 end
 
@@ -248,7 +252,7 @@ end
 
 function test_primal() #ATTENTION: plutôt gros problème sur la tête des ranges jacobiennes qui doivent être des intervalles
     R=RealField()
-    Anneau,(x,y)=PolynomialRing(R,["x","y"])
+    Anneau,(x,y)=polynomial_ring(R,["x","y"])
     pol1=[2*x^2+2*x]
     pol2=[3*x^2+5*x]
     inclusion_test(pol1,pol2)

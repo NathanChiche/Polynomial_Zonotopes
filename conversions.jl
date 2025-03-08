@@ -1,5 +1,5 @@
 
-function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Field)#checked
+function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Nemo.Field)#checked
 
     # on récupère les polynomes P1,...,Pn issus de la forme PZ={(P1(x1,...xp),...,Pn(x1,...xp)) pour x dans la boule unité pour la distance max}
     #attention il ne faut pas de termes redondants
@@ -7,7 +7,7 @@ function get_polynomials_from_SSPZ(PZ::SimpleSparsePolynomialZonotope,field::Fie
     G=genmat(PZ)
     E=expmat(PZ)
     nb_vars=size(E)[1]
-    anneau,(x)=PolynomialRing(field,nb_vars) 
+    anneau,(x)=polynomial_ring(field,nb_vars) 
     #monomials=get_monomials_from_expmat(E,anneau)
     #Polynomes=Array{Any}(undef,size(c)[1])
     Polynomes=[anneau(0) for k in 1:size(c)[1]]

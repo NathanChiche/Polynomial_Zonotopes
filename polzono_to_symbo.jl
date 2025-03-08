@@ -31,7 +31,9 @@ function quant_and_varsorders(n1,n2)
     return res
 end
 
-function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::PolynomialZonotope,pzonotope::PolynomialZonotope)
+
+
+function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope,pzonotope)
     """f(pZ) à gauche absolument"""
     fcenter = fpzonotope.c  # Center of the zonotope f(PZ)
     fgenerators = fpzonotope.G  # Polynomial generators of the zonotope f(PZ)
@@ -97,7 +99,7 @@ function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope::Polyno
     return symbolic_expr
 end
 
-function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope::PolynomialZonotope,pzonotope::PolynomialZonotope)
+function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope,pzonotope)
     """f(pZ) à gauche absolument"""
     fcenter = fpzonotope.c  # Center of the zonotope f(PZ)
     fgenerators = fpzonotope.G  # Polynomial generators of the zonotope f(PZ)
@@ -163,7 +165,7 @@ end
 ##SP = SimpleSparsePolynomialZonotope([2.0, 0], [1 0;0 2.], [1 4;1 2])
 
 """R=RealField()
-S,(x,y,s,t)=PolynomialRing(R,["x","y","s","t"])
+S,(x,y,s,t)=polynomial_ring(R,["x","y","s","t"])
 
 P=get_SSPZ_from_polynomials([x+t,y+s])
 fP=get_SSPZ_from_polynomials([x^2+x^3+s+t,y^2+s])
