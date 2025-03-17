@@ -75,27 +75,27 @@ function functionalinclusion_polynomial_zonotopes_to_function(fpzonotope,pzonoto
         end
     end
 
-    @show(symbolic_expr)
+    #@show(symbolic_expr)
 
     quantifiers=vcat(["forall" for i in 1:n_vars],["exists" for i in 1:dim])
     listfunctions=[]
     listgradient=[]
-    listg=[]
+    #listg=[]
     for i in 1:dim
         f=build_function(symbolic_expr[i],[var[j] for j=1:n_vars+dim],expression=Val{false})
         push!(listfunctions,f)
         gradfsymbo=Symbolics.gradient(symbolic_expr[i],y)
-        @show(gradfsymbo)
-        push!(listg,gradfsymbo)
+        #@show(gradfsymbo)
+        #push!(listg,gradfsymbo)
         gradfun=build_function(gradfsymbo,[y[j] for j=1:n_vars+dim],expression=Val{false})[1]
         push!(listgradient,gradfun)
 
     end
 
     #@show(symbolic_expr)
-    @show(listg)
+    #@show(listg)
     #return listg
-    return listfunctions,listgradient,quantifiers,n_vars+dim,listg
+    return listfunctions,listgradient,quantifiers,n_vars+dim#=,listg=#
     return symbolic_expr
 end
 
@@ -152,7 +152,7 @@ function geometricalinclusion_polynomial_zonotopes_to_function(fpzonotope,pzonot
         push!(listgradient,gradfun)
     end
 
-    @show(symbolic_expr)
+    #@show(symbolic_expr)
     return listfunctions,listgradient,quantifier,n_vars1,n_vars2
     return symbolic_expr
 end

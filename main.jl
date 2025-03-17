@@ -355,8 +355,13 @@ norm(Trian2.G[:,1])
 
 Trian3=get_SSPZ_from_polynomials([-x*y+3,-x+3])
 Trian4=get_SSPZ_from_polynomials([-s*t+3,-s+3])
+MatlabMatrix(Trian4,"Documents/julia/Traduct_Matlab/trian4.txt","trian4")
+get_polynomials_from_SSPZ(Trian5,R)
 Trian5=barycentric_join(Trian2,Trian4)
+
+MatlabMatrix(Trian5,"Documents/julia/Traduct_Matlab/trian5.txt","trian5")
 Trian6=barycentric_join(Trian2,Trian3)
+MatlabMatrix(Trian6,"Documents/julia/Traduct_Matlab/trian6.txt","trian6")
 plot_multiple([Trian2,Trian3],R,"Documents/julia/plots_julia/exemplepourjoin2",nbpoints=100000)
 plot_multiple([Trian5,Trian6],R,"Documents/julia/plots_julia/exemplepourjoinVSconvexhull2",nbpoints=10000000)
 
@@ -375,3 +380,6 @@ n1,n2=size(Test1.G)
 e1,e2=size(Test1.E)
 a1(x)=sum(Test1.G[2,j]*prod(x[k]^Test1.E[k,j] for k in 1:e1) for j in 1:n2)+Test1.c[2]
 a1([1,1])
+
+A=[0.2 0.05; -0.1 0.3]
+eigenvalues(A)

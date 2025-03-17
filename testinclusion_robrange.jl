@@ -142,13 +142,15 @@ function compute_ranges(gradient,intervalbox,quantifiers,intervalboxcenters)
     #NOW centered_interval equals our intervalbox where all existentially quantified variables are "reduced to their center"
     for k in 1:n
         if quantifiers[k]=="exists"
-            if typeof(abs.(gradient(intervalbox)[k]))!= IntervalArithmetic.Interval
+            if typeof(abs.(gradient(intervalbox)[k]))!= IntervalArithmetic.Interval{Float64} && typeof(abs.(gradient(centered_interval)[k]))!= IntervalArithmetic.Interval{Int64}
                 ranges[k]=abs.(gradient(intervalbox)[k])..abs.(gradient(intervalbox)[k])
             else
                 ranges[k]=abs.(gradient(intervalbox)[k])
             end
         else    
-            if typeof(abs.(gradient(centered_interval)[k]))!= IntervalArithmetic.Interval
+            if typeof(abs.(gradient(centered_interval)[k]))!= IntervalArithmetic.Interval{Float64} && typeof(abs.(gradient(centered_interval)[k]))!= IntervalArithmetic.Interval{Int64}
+                #@show(abs.(gradient(centered_interval)[k]))
+                #@show(typeof(abs.(gradient(centered_interval)[k])))
                 ranges[k]=abs.(gradient(centered_interval)[k])..abs.(gradient(centered_interval)[k])
             else 
                 ranges[k]=abs.(gradient(centered_interval)[k]) # we apply strictly the theorem 2 form goubault putot 2020 which states we can evaluate in the center of the existentially quantified variables
@@ -158,6 +160,7 @@ function compute_ranges(gradient,intervalbox,quantifiers,intervalboxcenters)
     return ranges
 end
 
+IntervalArithmetic.Interval{Float64}==IntervalArithmetic.Interval
 
 function zeros_in_intervalvectors(intervals,dim)
     for o in 1:dim
@@ -192,7 +195,7 @@ function bisect_at_component(interva, component::Int)
     return left, right
 end
 
-function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
+function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
     intervalbox=[interval(-1..1) for c in 1:nbvars]
     listintervalbox=[intervalbox]
     width=2.0
@@ -226,8 +229,8 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
                 return 1
             end
         end
-        tour=(tour)%(nbvars-dim)+1
-        #@show(tour)
+        @show(tour)
+        tour=(tour)%(nbinitialvariables)+1
         if tour==1
             width=width/2
         end
@@ -238,15 +241,15 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers)
 end 
 
 
-function inclusion_test(FPZ,PZ,epsilon)
+function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables)
     dim=length(PZ.c)
     listfunc,listgrad,quantifiers,nbvars=functionalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
     inte=interval(-1..1)
-    intervalbox=[inte for i in 1:nbvars]
+    #intervalbox=[inte for i in 1:nbvars]
     
     #@show(listgrad[1](intervalbox))
     #@show(listgrad[2](intervalbox))
-    return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers)
+    return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
 
 end
 

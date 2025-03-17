@@ -1,5 +1,5 @@
 function compose(p,list_poly)
-    return evaluate(p,list_poly)
+    return Nemo.evaluate(p,list_poly)
 end
 
 function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Nemo.Field)
@@ -20,7 +20,7 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
     return get_SSPZ_from_polynomials(composit)
 end
 
-function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein")
+function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein",nbinitialvariables::Int64=2)
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     #println("on entre dans l'itération")
     i=0
@@ -37,7 +37,7 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
             fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
         end
         if i>=borne_union+1 && inclusiontest==1
-            inclusion=inclusion_test(fPZ,PZ,1.5)
+            inclusion=inclusion_test(fPZ,PZ,1.5,nbinitialvariables)
             @show(inclusion)
             if inclusion!="false"
                 println("INCLUSION!")
@@ -80,6 +80,6 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         i+=1
         push!(liste,PZ)
     end
-    #println("nombre de réductions, ",nb_reduc)
+    println("nombre de réductions, ",nb_reduc)
     return liste
 end

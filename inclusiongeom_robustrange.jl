@@ -1,7 +1,7 @@
 using Symbolics
 using Nemo
 using IntervalArithmetic
-using StaticArrays
+#using StaticArrays
 using Combinatorics
 using ForwardDiff
 

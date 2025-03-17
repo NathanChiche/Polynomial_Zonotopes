@@ -1,5 +1,5 @@
 function evaluate_polynomials_on_vector(polynomials,vector::Vector{Float64})
-    return [Float64(evaluate(polynomials[i],vector)) for i in 1:length(polynomials)]
+    return [Float64(Nemo.evaluate(polynomials[i],vector)) for i in 1:length(polynomials)]
 end
 
 function plot_sampling(PZ::SimpleSparsePolynomialZonotope,field::Nemo.Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
@@ -33,15 +33,15 @@ function plot_multiple(liste_PZ,field::Nemo.Field,filename::String;nbpoints=3000
         y=collect(points[i][2] for i in 1:length(points))
         if i==1
             if xlim!==nothing
-                scatter(x,y,xlimits=xlim,ylimits=ylim,legend=false)
+                scatter(x,y,xlimits=xlim,ylimits=ylim,label="iterate number:"*string(i))
             else 
-                scatter(x,y,legend=false)
+                scatter(x,y,label="iterate number:"*string(i))
             end
         else
             if xlim!==nothing
-                scatter!(x,y,xlimits=xlim,ylimits=ylim,legend=false)
+                scatter!(x,y,xlimits=xlim,ylimits=ylim,label="iterate number:"*string(i))
             else 
-                scatter!(x,y,legend=false)
+                scatter!(x,y,label="iterate number:"*string(i))
             end
         end
         i=i+1
@@ -49,6 +49,38 @@ function plot_multiple(liste_PZ,field::Nemo.Field,filename::String;nbpoints=3000
     savefig(filename)
 end
 
+function plot_multiplefinnext(liste_PZ,field::Nemo.Field,filename::String;nbpoints=300000,xlim=nothing,ylim=nothing)
+    i=1
+    for PZ in liste_PZ
+        println("coucou")
+        nb_vars=size(expmat(PZ))[1]
+        nb=size(genmat(PZ))[1]
+        polynomes=get_polynomials_from_SSPZ(PZ,field)
+        step=1/nbpoints
+        liste=collect(rand(-1.0:step:1.0,nb_vars) for i in 1:nbpoints)
+        points = [evaluate_polynomials_on_vector(polynomes,v) for v in liste]
+        #pl=plot(first.(points),last.(points),legend=false)
+        x=collect(points[i][1] for i in 1:length(points))
+        y=collect(points[i][2] for i in 1:length(points))
+        if i==1
+            if xlim!==nothing
+                scatter(x,y,xlimits=xlim,ylimits=ylim,label="last kleene iterate",mc=:darkorange)
+            else 
+                scatter(x,y,label="last kleene iterate",mc=:darkorange)
+            end
+        else
+            if xlim!==nothing
+                scatter!(x,y,xlimits=xlim,ylimits=ylim,label="image of the last iterate",mc=:steelblue3)
+            else 
+                scatter!(x,y,label="image of the last iterate",mc=:steelblue3)
+            end
+        end
+        i=i+1
+    end
+    savefig(filename)
+end
+
+"coucou"*string(1)
 
 #=pas=1/10
 pointspas=collect(rand(-1.0:pas:1.0,5) for i in 1:100)

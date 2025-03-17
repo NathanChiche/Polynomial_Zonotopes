@@ -227,7 +227,7 @@ function zonotopic_joinbisold(PZ1,PZ2,solver)
         push!(ranges2,enclose(a2,domain,sol))
         #println("enclose de la deuxieme partie :",enclose(a2,domain,BranchAndBoundEnclosure()))
     end
-    println("ranges2: ",ranges2)
+    #println("ranges2: ",ranges2)
     center=zeros(n1)
     #ln(typeof(Gnew))
     for i in 1:n1
@@ -247,16 +247,16 @@ function zonotopic_joinbisold(PZ1,PZ2,solver)
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 end
 
-function zonotopic_joinbis(PZ1,PZ2,solver)#PAS VERIFIEE
+function zonotopic_joinbis(PZ1,PZ2,solver)#Checked
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
     if solver=="NaturalEnclosure"
         sol=NaturalEnclosure()
     elseif solver=="BranchAndBoundEnclosure"
-        sol=BranchAndBoundEnclosure()
+        sol=BranchAndBoundEnclosure(tol=1e-2,maxdepth=9)
     elseif solver=="TaylorModel"
         sol=TaylorModelsEnclosure()
     elseif solver=="SumOfSquares"
-        sol=SumOfSquaresEnclosure()
+        sol=SumOfSquaresEnclosure(; backend=backend)
     end
 
     n1,n2=size(PZ1.G)
@@ -290,26 +290,33 @@ function zonotopic_joinbis(PZ1,PZ2,solver)#PAS VERIFIEE
 
     ranges1=[]
     domain=IntervalBox(-1..1, e1)
+    #@polyvar y[1:e1]
     for i in 1:n1
         a1(x)=sum(GP1[i,j]*prod(x[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ1.c[i]
+        #println("premier reste")
+        #ez=sum(GP1[i,j]*prod(y[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ1.c[i]
+        #@show(ez)
         push!(ranges1,enclose(a1,domain,sol))
     end
-    @show(ranges1)
+   # @show(ranges1)
 
     domain=IntervalBox(-1..1, f1)
     ranges2=[]
     for i in 1:m1
         a2(x)=sum(GP2[i,j]*prod(x[k]^PZ2.E[k,j] for k in 1:f1) for j in 1:m2)+PZ2.c[i]
+        #println("deuxieme reste")
+        #ez=sum(GP1[i,j]*prod(y[k]^PZ1.E[k,j] for k in 1:e1) for j in 1:n2)+PZ2.c[i]
+        #@show(ez)
         push!(ranges2,enclose(a2,domain,sol))
     end
-    @show(ranges2)
+    #@show(ranges2)
     center=zeros(n1)
     
     for i in 1:n1
         mini=min(ranges1[i].lo,ranges2[i].lo)
         maxi=max(ranges1[i].hi,ranges2[i].hi)
         mid=Float64(1/2*(mini+maxi))
-        @show(mini,maxi,mid)
+        #@show(mini,maxi,mid)
         #println(mini," ", maxi," ", mid)
         center[i]=mid
         z=zeros(Int64,n1+e1)
@@ -317,15 +324,13 @@ function zonotopic_joinbis(PZ1,PZ2,solver)#PAS VERIFIEE
         Enew=hcat(Enew,z)
         z=zeros(Float64,n1)
         z[i]=Float64(maxi-mini)/2
-        println(z[i])
+        #println(z[i])
         Gnew=hcat(Gnew,z)
     end
 
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 
 end
-    
-R=RealField()
 
 function zonotopic_joinold(PZ1,PZ2,solver)
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
