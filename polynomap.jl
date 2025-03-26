@@ -20,7 +20,7 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
     return get_SSPZ_from_polynomials(composit)
 end
 
-function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein",nbinitialvariables::Int64=2)
+function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein",nbinitialvariables::Int64=2,linearsystem::Bool=false)
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     #println("on entre dans l'itération")
     i=0
@@ -37,11 +37,12 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
             fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
         end
         if i>=borne_union+1 && inclusiontest==1
-            inclusion=inclusion_test(fPZ,PZ,1.5,nbinitialvariables)
+            inclusion=inclusion_test(fPZ,PZ,1.5,nbinitialvariables,linearsystem)
             @show(inclusion)
             if inclusion!="false"
                 println("INCLUSION!")
-                return fPZ
+                #push!(liste,fPZ)
+                return liste
             end
         end
         #println("number of terms after the composition: ",size(fPZ.E)[2])
@@ -64,8 +65,8 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
                 PZ=zonotopic_join(PZ_previous,fPZ,solver)
                 PZ=remove_unused_variables(PZ)
             else
-                #PZ=barycentric_join(PZ_previous,fPZ)
-                PZ=barycentre_union_simplifiee(PZ_previous,fPZ,field)
+                PZ=barycentric_join(PZ_previous,fPZ)
+                #PZ=barycentre_union_simplifiee(PZ_previous,fPZ,field)
                 #PZ=remove_useless_terms!(PZ) PAS BESOIN PUISQUE CEST DEJA DANS LE JOIN
             end
         else

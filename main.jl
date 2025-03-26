@@ -381,5 +381,6 @@ e1,e2=size(Test1.E)
 a1(x)=sum(Test1.G[2,j]*prod(x[k]^Test1.E[k,j] for k in 1:e1) for j in 1:n2)+Test1.c[2]
 a1([1,1])
 
-A=[0.2 0.05; -0.1 0.3]
+A=[0 1.0; -0.7 1.4]
 eigenvalues(A)
+A^5

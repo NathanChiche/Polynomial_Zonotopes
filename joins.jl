@@ -252,7 +252,7 @@ function zonotopic_joinbis(PZ1,PZ2,solver)#Checked
     if solver=="NaturalEnclosure"
         sol=NaturalEnclosure()
     elseif solver=="BranchAndBoundEnclosure"
-        sol=BranchAndBoundEnclosure(tol=1e-2,maxdepth=9)
+        sol=BranchAndBoundEnclosure(tol=1e-2,maxdepth=7)
     elseif solver=="TaylorModel"
         sol=TaylorModelsEnclosure()
     elseif solver=="SumOfSquares"

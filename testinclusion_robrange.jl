@@ -195,7 +195,23 @@ function bisect_at_component(interva, component::Int)
     return left, right
 end
 
-function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
+function linearfunctionalinclusion(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
+    interval_to_check=[interval(-1..1) for c in 1:nbvars]
+    intervcenters=intervals_centers(interval_to_check)
+    rangelist=[compute_ranges(listgradie[k],interval_to_check,quantifiers,intervcenters) for k in 1:dim]
+    center=[f[b](intervals_centers(interval_to_check)) for b in 1:dim]
+    if call_multiple_outers_bis(rangelist,center,quantifiers,interval_to_check)==false
+        println("pas dans la surapprox")
+        return "false"
+    else 
+        return call_multiple_inners_bis(rangelist,center,quantifiers,interval_to_check)
+    end
+end
+
+function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables,linearsystem)
+    if linearsystem
+        return linearfunctionalinclusion(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
+    end
     intervalbox=[interval(-1..1) for c in 1:nbvars]
     listintervalbox=[intervalbox]
     width=2.0
@@ -241,7 +257,7 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariabl
 end 
 
 
-function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables)
+function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables,linearsystem)
     dim=length(PZ.c)
     listfunc,listgrad,quantifiers,nbvars=functionalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
     inte=interval(-1..1)
@@ -249,7 +265,7 @@ function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables)
     
     #@show(listgrad[1](intervalbox))
     #@show(listgrad[2](intervalbox))
-    return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
+    return paverobust(listfunc,listgrad,dim,nbvars,epsilon,quantifiers,nbinitialvariables,linearsystem)
 
 end
 
