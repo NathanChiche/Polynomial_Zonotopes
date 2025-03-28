@@ -51,24 +51,48 @@ der2=enclose(dei,dozk,BranchAndBoundEnclosure()).hi
 R=RealField()
 Annea,(x,y)=polynomial_ring(R,["x","y"])
 
-function lineaireconverge()
+function identite(nbiter,dx,dy,powerf)
     R=RealField()
     S,(x,y)=polynomial_ring(R,["x","y"])
     #f1=0.2*x - 0.1*y
     #f2=0.05*x + 0.3*y
-    f1=0.4*x+0.1*y
-    f2=0.2*y+0.2*x
-    Pstart=get_SSPZ_from_polynomials([x+1,y+1])
-    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,4,1,R,"zono",max_order=200000,inclusiontest=0,solver="NaturalEnclosure")
+    f1=x
+    f2=y
+    Pstart=get_SSPZ_from_polynomials([x+dx,y+dy])
+    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,nbiter,1,R,"zono",max_order=200000,inclusiontest=1,solver="NaturalEnclosure",power=powerf,linearsystem=true)
     #popfirst!(fin)
     #fin=reverse(fin)
     #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaireconverge1_zono_4iter_join81_test",nbpoints=15000)
     #fini=fin[end]
     #next=poly_apply_on_SSPZ(fini,[f1,f2],R)
-    return fin
+    #return fin
+    println("finito")
 
 end
-@time fin=lineaireconverge()
+@time identite(20,0,0,1)
+
+function lineaireconverge(nbiter,dx,dy,powerf)
+    R=RealField()
+    #S,(x,y)=polynomial_ring(R,["x","y"])
+    #f1=0.2*x - 0.1*y
+    #f2=0.05*x + 0.3*y
+    @polyvar x1 x2
+    f1=0.3*x1+0.1*x2
+    f2=0.4*x2
+    #Pstart=get_SSPZ_from_polynomials([x+dx,y+dy])
+    Pstart=dynamic_to_sparse_poly_zono([x1+dx; x2+dx])
+    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,nbiter,1,R,"zono",max_order=200000,inclusiontest=1,solver="NaturalEnclosure",power=powerf,linearsystem=true)
+    #popfirst!(fin)
+    #fin=reverse(fin)
+    #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaireconverge1_zono_4iter_join81_test",nbpoints=15000)
+    #fini=fin[end]
+    #next=poly_apply_on_SSPZ(fini,[f1,f2],R)
+    #return fin
+    println("finito")
+
+end
+@time lineaireconverge(4,0,0,1)
+24/100
 fin[1].G
 @time lin,next=lineaireconverge()
 lin.E
@@ -76,15 +100,15 @@ lin.G
 plot(lin)
 plot_multiplefinnext([lin,next],R,"Documents/julia/plots_julia/lineaire1_zono_4iter_join1_test",nbpoints=15000)
 
-function lineaireconverge2()
+function lineaireconverge2(nbiter)
     R=RealField()
     S,(x,y)=polynomial_ring(R,["x","y"])
     #f1=0.2*x - 0.1*y
     #f2=0.05*x + 0.3*y
     f1=0.4*x+0.2*y
     f2=0.2*y+0.2*x
-    Pstart=get_SSPZ_from_polynomials([x+0.18,y-1.8])
-    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,30,1,R,"zono",max_order=200000,inclusiontest=1,solver="NaturalEnclosure",power=2,linearsystem=true)
+    Pstart=get_SSPZ_from_polynomials([x+0.17,y-1.8])
+    fin=iterate_polynomials_over_PZ([f1,f2],Pstart,nbiter,1,R,"zono",max_order=200000,inclusiontest=1,solver="NaturalEnclosure",power=2,linearsystem=true)
     #popfirst!(fin)
     #fin=reverse(fin)
     #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaireconverge1_zono_4iter_join81_test",nbpoints=15000)
@@ -92,7 +116,7 @@ function lineaireconverge2()
     #next=poly_apply_on_SSPZ(fini,[f1,f2],R)
     return fin
 end
-@time res=lineaireconverge2()
+@time res=lineaireconverge2(6)
 res[7].E
 
 function lineaireconvergebary2()
@@ -160,42 +184,56 @@ end
 @time reshenon1=henon()
 plot_multiplefinnext(reshenon1,R,"Documents/julia/plots_julia/henon1_zono_5iter_join2",nbpoints=400000)
 
+1/2^4
 
-
-function polynomialnonconverge()
+function inversesquareroot(nbiter,dx,dy,powerf)
     R=RealField()
     S,(x,y)=polynomial_ring(R,["x","y"])
-
-    p1=1/4*(x+x^2)
-    p2=1/4*(y+x)
-    Pstart=get_SSPZ_from_polynomials([x; y])
-    fin=iterate_polynomials_over_PZ([p1,p2],Pstart,5,1,R,"zono",max_order=20000000,power=1,inclusiontest=0,solver="BranchAndBoundEnclosure")
+    p1=x+x*(0.5*(1-y*x^2)+0.375*(1-y*x^2)^2)
+    p2=y
+    Pstart=get_SSPZ_from_polynomials([0*x+dx; 2*y+dy])
+    fin=iterate_polynomials_over_PZ([p1,p2],Pstart,nbiter,7,R,"zono",max_order=20000000,power=powerf,inclusiontest=0,solver="BranchAndBoundEnclosure",tolerance=1e-4,maxdepth=12)
     popfirst!(fin)
     fini=fin[end]
     next=poly_apply_on_SSPZ(fini,[p1,p2],R)
     #return fin
     return fini,next
 end
-@time respolynome1=polynomialnonconverge()
+respolynome1=inversesquareroot(4,1/2^4,18,1)
+rangesfrompolynomialzonotope(respolynome1[1],10e-3,10)
 #plot_multiple(respolynome1,R,"Documents/julia/plots_julia/polynome1_zono_5iter_join7decal",nbpoints=200000)
 plot_multiplefinnext(respolynome1,R,"Documents/julia/plots_julia/polynome1_bary_5iter_join2decal",nbpoints=400000)
 
-@VSCodeServer.profview res=polynomialnonconverge()
+#@VSCodeServer.profview res=polynomialnonconverge()
 #@VSCodeServer.profview_allocs g=goal()
 
+1/0.273539
+1/0.111227
+1/0.223602
+1/0.249969
 
-
-
-
+function rangesfrompolynomialzonotope(PZ,tolerance,maxde)
+    d=length(PZ.c)
+    nbvars=size(PZ.E)[1]
+    ngener=size(PZ.G)[2]
+    domain=IntervalBox(-1..1, nbvars)
+    for i in 1:d
+        a1(v)=sum(PZ.G[i,j]*prod(v[k]^PZ.E[k,j] for k in 1:nbvars) for j in 1:ngener)+PZ.c[i]
+        println(enclose(a1,domain,BranchAndBoundEnclosure(tol=tolerance,maxdepth=maxde)))
+        #println(enclose(a1,domain,MooreSkelboeEnclosure()))
+    end
+end
 
 function exemplejoinzono()
     R=RealField()
     S,(x,y)=polynomial_ring(R,["x","y"])
 
     A=get_SSPZ_from_polynomials([x+y^2;x*y+y^3])
+    Testrange=get_SSPZ_from_polynomials([x+x^2;x*y+y^2+y^3])
+    @show(rangesfrompolynomialzonotope(Testrange,1e-4,14))
     B=get_SSPZ_from_polynomials([x+x^2+0.5*y^2;x*y+1])
     J=zonotopic_join(A,B,"BranchAndBoundEnclosure")
-    @show(get_polynomials_from_SSPZ(J,R))
+    #@show(get_polynomials_from_SSPZ(J,R))
     #plot_multiple([J,A,B],R,"Documents/julia/plots_julia/testjoinzonopapier",nbpoints=60000)
     #MatlabMatrix(A,"Documents/julia/Traduct_Matlab/poisson1.txt","pois1")
     #MatlabMatrix(B,"Documents/julia/Traduct_Matlab/poisson2.txt","pois2")

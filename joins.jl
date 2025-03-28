@@ -247,12 +247,12 @@ function zonotopic_joinbisold(PZ1,PZ2,solver)
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 end
 
-function zonotopic_joinbis(PZ1,PZ2,solver)#Checked
+function zonotopic_joinbis(PZ1,PZ2,solver,tolerance,maxdept)#Checked
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
     if solver=="NaturalEnclosure"
         sol=NaturalEnclosure()
     elseif solver=="BranchAndBoundEnclosure"
-        sol=BranchAndBoundEnclosure(tol=1e-2,maxdepth=7)
+        sol=BranchAndBoundEnclosure(tol=tolerance,maxdepth=maxdept)
     elseif solver=="TaylorModel"
         sol=TaylorModelsEnclosure()
     elseif solver=="SumOfSquares"
@@ -397,10 +397,10 @@ function zonotopic_joinold(PZ1,PZ2,solver)
     return SimpleSparsePolynomialZonotope(center,Gnew,Enew)
 end
 
-function zonotopic_join(PZ1,PZ2,solver)
+function zonotopic_join(PZ1,PZ2,solver,tolerance,maxdep)
     """warning, it is required that PZ1 and PZ2 are defined over the same variables"""
     if solver!="bernstein"
-        return zonotopic_joinbis(PZ1,PZ2,solver)
+        return zonotopic_joinbis(PZ1,PZ2,solver,tolerance,maxdep)
     end
     c1=PZ1.c 
     c2=PZ2.c 

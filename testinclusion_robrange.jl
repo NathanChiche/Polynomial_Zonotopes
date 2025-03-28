@@ -209,6 +209,7 @@ function linearfunctionalinclusion(f,listgradie,dim,nbvars,epsilon,quantifiers,n
 end
 
 function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables,linearsystem)
+    println("entre pavage")
     if linearsystem
         return linearfunctionalinclusion(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariables)
     end
@@ -219,8 +220,10 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariabl
     #@show(dim,nbvars)
     while width>epsilon
         l=length(listintervalbox)
+
         #@show(l)
         for i in 1:l
+            println(i)
             interval_to_check=popfirst!(listintervalbox)
             #@show(interval_to_check)
             #ranges=compute_ranges(listgradie,dim,interval_to_check)
@@ -253,13 +256,16 @@ function paverobust(f,listgradie,dim,nbvars,epsilon,quantifiers,nbinitialvariabl
 
         #@show(width)
     end
+    println("sort pavage")
     return "false"
 end 
 
 
 function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables,linearsystem)
     dim=length(PZ.c)
+    println("entre traduction ")
     listfunc,listgrad,quantifiers,nbvars=functionalinclusion_polynomial_zonotopes_to_function(FPZ,PZ)
+    println("sort traduction")
     inte=interval(-1..1)
     #intervalbox=[inte for i in 1:nbvars]
     

@@ -20,7 +20,14 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
     return get_SSPZ_from_polynomials(composit)
 end
 
-function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein",nbinitialvariables::Int64=2,linearsystem::Bool=false)
+function poly_apply_on_SSPZdynamic(PZ,list_poly)
+    println("Bonne transformation polynomiale")
+    polyPZ=sparse_poly_zono_to_dynamic(PT)[1]
+    Transformed=polynomial_transformation(polyPZ,list_poly)
+    return dynamic_to_sparse_poly_zono(Transformed)
+end
+
+function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,scale_factor::Float64=1.1,power::Int64=1,inclusiontest::Int64=1,solver="bernstein",nbinitialvariables::Int64=2,linearsystem::Bool=false,tolerance::Float64=1e-3,maxdepth::Int64=10)
     """il faudrait quand même trouver un moyen efficace de tester l'inclusion entre polynomial zonotopes"""
     #println("on entre dans l'itération")
     i=0
@@ -34,7 +41,8 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         PZ_previous=fPZ
         
         for p in 1:power 
-            fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
+            #fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
+            fPZ=poly_apply_on_SSPZdynamic(PZ,Polynomes)
         end
         if i>=borne_union+1 && inclusiontest==1
             inclusion=inclusion_test(fPZ,PZ,1.5,nbinitialvariables,linearsystem)
@@ -56,19 +64,20 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
             println("LOUPE")
             return liste
         end=#
-
         if i>= borne_union
+            println("entre join")
             if choice=="bernstein"
                 println("ON FAIT BIEN LE JOIN DE BERNSTEIN")
                 PZ=bernstein_zonotopic_join(PZ_previous,fPZ,field)
             elseif choice=="zono"
-                PZ=zonotopic_join(PZ_previous,fPZ,solver)
+                PZ=zonotopic_join(PZ_previous,fPZ,solver,tolerance,maxdepth)
                 PZ=remove_unused_variables(PZ)
             else
                 PZ=barycentric_join(PZ_previous,fPZ)
                 #PZ=barycentre_union_simplifiee(PZ_previous,fPZ,field)
                 #PZ=remove_useless_terms!(PZ) PAS BESOIN PUISQUE CEST DEJA DANS LE JOIN
             end
+            println("sort join")
         else
             PZ=fPZ
         end
