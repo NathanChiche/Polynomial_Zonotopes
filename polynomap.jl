@@ -2,6 +2,51 @@ function compose(p,list_poly)
     return Nemo.evaluate(p,list_poly)
 end
 
+function applyfilter(PZ::SimpleSparsePolynomialZonotope,A::Matrix{Float64},B::Vector{Float64},m::Float64,M::Float64) #VERIFIEE
+    nbvars=size(PZ.E)[1] 
+    ngen=size(PZ.G)[2]
+    cnew=[PZ.c[2], A[2,1]*PZ.c[1]+A[2,2]*PZ.c[2]+(B[1]+B[2]+B[3])*(m+M)/2]
+    exponew=zeros(Int64,nbvars+1)
+    exponew[nbvars+1]=1
+    genew=[0.0 , B[3]*(M-m)/2]
+    vectores=zeros(Float64,ngen)
+    vectores[end],vectores[end-1]=B[2]*(M-m)/2,B[1]*(M-m)/2
+    Enew=hcat(vcat(PZ.E,zeros(Int64,1,ngen)),exponew)
+
+    Gnew=hcat(vcat(reshape(PZ.G[2,:],1,:),reshape(A[2,1]*PZ.G[1,:]+A[2,2]*PZ.G[2,:]+vectores,1,:)),genew)
+    return SimpleSparsePolynomialZonotope(cnew,Gnew,Enew)
+
+end
+
+function powerfilter(PZ::SimpleSparsePolynomialZonotope,A::Matrix{Float64},B::Vector{Float64},m::Float64,M::Float64,power::Int64) #VERIFIEE SUR EXEMPLE ERIC SYLVIE
+    for p in 1:power
+        PZ=applyfilter(PZ,A,B,m,M)
+    end
+    return PZ
+end
+st=SimpleSparsePolynomialZonotope([0.0, 0.0],[0.0 0; 0 0],[1 0; 0 1])
+HU=applyfilter(st,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.5,0.5)
+HU.G
+HU.c
+HU.E
+@time sparse_poly_zono_to_dynamic(HU)[1]
+applyfilter(HU,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.5,0.5)
+PHU1=powerfilter(st,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0,98)
+PHU1.c
+PHU1.G
+@time sparse_poly_zono_to_dynamic(PHU1)[1]
+
+function iterate_filter_over_PZ(PZ::SimpleSparsePolynomialZonotope,nbiter::Int64,A::Matrix{Float64},B::Vector{Float64},m::Float64,M::Float64,power::Int64)
+    i=0
+    range=Array{IntervalArithmetic.Interval{Float64}}(undef,2)
+    while i<=nbiter
+        PZ=powerfilter(PZ,A,B,m,M,power)
+        
+    end
+end
+typeof(-1..1)
+
+
 function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Nemo.Field)
     nb_vars=size(expmat(PZ))[1]#nombre de variables est le nombre de lignes de la matrice des exposants
     composit=[]
@@ -21,9 +66,11 @@ function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::
 end
 
 function poly_apply_on_SSPZdynamic(PZ,list_poly)
-    println("Bonne transformation polynomiale")
-    polyPZ=sparse_poly_zono_to_dynamic(PT)[1]
+    #println("Bonne transformation polynomiale")
+    polyPZ=sparse_poly_zono_to_dynamic(PZ)[1]
+    #@show(polyPZ)
     Transformed=polynomial_transformation(polyPZ,list_poly)
+    #@show(Transformed)
     return dynamic_to_sparse_poly_zono(Transformed)
 end
 
@@ -36,14 +83,15 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
     
     while i<nb_iter
         println("itération numéro",i)
-        #println("nb variables PZ: ",size(PZ.E)[1])
         fPZ=liste[end]
         PZ_previous=fPZ
         
         for p in 1:power 
-            #fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
-            fPZ=poly_apply_on_SSPZdynamic(PZ,Polynomes)
+            println("avant appli")
+            fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)#pas de problème d'aliasing entre les arrays ici
+            println("apres appli")
         end
+        #@show(get_polynomials_from_SSPZ(fPZ,R))
         if i>=borne_union+1 && inclusiontest==1
             inclusion=inclusion_test(fPZ,PZ,1.5,nbinitialvariables,linearsystem)
             @show(inclusion)
@@ -53,12 +101,6 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
                 return liste
             end
         end
-        #println("number of terms after the composition: ",size(fPZ.E)[2])
-        #println("nb variables PZ_interm: ",size(fPZ.E)[1])
-        #println("nombre de termes avant la réduction/après fonctionnelle: ",size(fPZ.E)[2])
-        #polytest1=get_polynomials_from_SSPZ(fPZ,field)
-        
-        #polytest2=get_polynomials_from_SSPZ(fPZ,field)
 
         #=if nb_reduc==0 && polytest1!=polytest2
             println("LOUPE")
@@ -70,6 +112,7 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
                 println("ON FAIT BIEN LE JOIN DE BERNSTEIN")
                 PZ=bernstein_zonotopic_join(PZ_previous,fPZ,field)
             elseif choice=="zono"
+                
                 PZ=zonotopic_join(PZ_previous,fPZ,solver,tolerance,maxdepth)
                 PZ=remove_unused_variables(PZ)
             else
@@ -81,15 +124,17 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
         else
             PZ=fPZ
         end
+
         #println("number of terms/monomials after join ",size(expmat(PZ))[2])
         if size(PZ.G)[2]>=max_order
             PZ=Simple_reduce_order(PZ,max_order)
             nb_reduc+=1
         end
-        #println("number of terms after reduction: ",size(PZ.E)[2])
+
         i+=1
         push!(liste,PZ)
     end
     println("nombre de réductions, ",nb_reduc)
     return liste
 end
+

@@ -71,28 +71,37 @@ function identite(nbiter,dx,dy,powerf)
 end
 @time identite(20,0,0,1)
 
+C=zonotopic_joinbis(get_SSPZ_from_polynomials([x^2;y]),get_SSPZ_from_polynomials([x^4;0.4*y]),"NaturalEnclosure",1,1)
+get_polynomials_from_SSPZ(C,R)
+
 function lineaireconverge(nbiter,dx,dy,powerf)
     R=RealField()
-    #S,(x,y)=polynomial_ring(R,["x","y"])
+    S,(x,y)=polynomial_ring(R,["x","y"])
     #f1=0.2*x - 0.1*y
     #f2=0.05*x + 0.3*y
-    @polyvar x1 x2
-    f1=0.3*x1+0.1*x2
-    f2=0.4*x2
-    #Pstart=get_SSPZ_from_polynomials([x+dx,y+dy])
-    Pstart=dynamic_to_sparse_poly_zono([x1+dx; x2+dx])
+    #f1=0.3*x+0.1*y
+    f1=x^2
+    f2=y
+    #@polyvar x1 x2
+    #f1=0.3*x1 + 0.1*x2
+    #f2=0.4*x2
+    Pstart=get_SSPZ_from_polynomials([x+dx,y+dy])
+    #Pstart=dynamic_to_sparse_poly_zono([x1+dx; x2+dx])
     fin=iterate_polynomials_over_PZ([f1,f2],Pstart,nbiter,1,R,"zono",max_order=200000,inclusiontest=1,solver="NaturalEnclosure",power=powerf,linearsystem=true)
     #popfirst!(fin)
     #fin=reverse(fin)
     #plot_multiple(fin,R,"Documents/julia/plots_julia/lineaireconverge1_zono_4iter_join81_test",nbpoints=15000)
     #fini=fin[end]
     #next=poly_apply_on_SSPZ(fini,[f1,f2],R)
-    #return fin
+    return fin
     println("finito")
 
 end
-@time lineaireconverge(4,0,0,1)
-24/100
+@time fre=lineaireconverge(3,0,0,1)
+get_polynomials_from_SSPZ(fre[3],R)
+
+
+
 fin[1].G
 @time lin,next=lineaireconverge()
 lin.E
@@ -188,29 +197,40 @@ plot_multiplefinnext(reshenon1,R,"Documents/julia/plots_julia/henon1_zono_5iter_
 
 function inversesquareroot(nbiter,dx,dy,powerf)
     R=RealField()
-    S,(x,y)=polynomial_ring(R,["x","y"])
-    p1=x+x*(0.5*(1-y*x^2)+0.375*(1-y*x^2)^2)
-    p2=y
-    Pstart=get_SSPZ_from_polynomials([0*x+dx; 2*y+dy])
-    fin=iterate_polynomials_over_PZ([p1,p2],Pstart,nbiter,7,R,"zono",max_order=20000000,power=powerf,inclusiontest=0,solver="BranchAndBoundEnclosure",tolerance=1e-4,maxdepth=12)
+    #S,(x,y)=polynomial_ring(R,["x","y"])
+    @polyvar x1 x2
+    p1=x1+x1*((1/2)*(1-x2*x1^2)+(3/8)*(1-x2*x1^2)^2)
+    p2=x2
+    #@show(p1)
+    #println("Nombre de termes : ", length(DynamicPolynomials.terms(p1)))
+    #println("Nombre de termes : ", length(DynamicPolynomials.terms(p2)))
+    #Pstart=get_SSPZ_from_polynomials([0*x1+dx; 2*x2+dy])
+    Pstart=dynamic_to_sparse_poly_zono([0*x1+dx; 2*x2+dy])
+    #@show(sparse_poly_zono_to_dynamic(Pstart)[1])
+
+    fin=iterate_polynomials_over_PZ([p1,p2],Pstart,nbiter,1,R,"zono",max_order=20000000,power=powerf,inclusiontest=1,solver="BranchAndBoundEnclosure",linearsystem=true,tolerance=1e-2,maxdepth=6)
     popfirst!(fin)
     fini=fin[end]
-    next=poly_apply_on_SSPZ(fini,[p1,p2],R)
+    #next=poly_apply_on_SSPZ(fini,[p1,p2],R)
     #return fin
-    return fini,next
+    return fini
 end
-respolynome1=inversesquareroot(4,1/2^4,18,1)
-rangesfrompolynomialzonotope(respolynome1[1],10e-3,10)
-#plot_multiple(respolynome1,R,"Documents/julia/plots_julia/polynome1_zono_5iter_join7decal",nbpoints=200000)
-plot_multiplefinnext(respolynome1,R,"Documents/julia/plots_julia/polynome1_bary_5iter_join2decal",nbpoints=400000)
+
+@time respolynome1=inversesquareroot(4,1/2^4,18,1) 
+ rangesfrompolynomialzonotope(respolynome1,10e-3,10)
+#length(DynamicPolynomials.terms(sparse_poly_zono_to_dynamic(respolynome1)[1][1]))
+1/0.219225
+1/0.240684
 
 #@VSCodeServer.profview res=polynomialnonconverge()
 #@VSCodeServer.profview_allocs g=goal()
-
-1/0.273539
-1/0.111227
 1/0.223602
 1/0.249969
+
+1/0.223606
+1/0.25
+
+sqrt(20)
 
 function rangesfrompolynomialzonotope(PZ,tolerance,maxde)
     d=length(PZ.c)

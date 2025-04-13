@@ -33,6 +33,7 @@ function get_SSPZ_from_polynomials(Polynomes)#il faut faire qqchose pour éviter
         end
     end
     unique!(liste_exp)#on enlève les doublons dans la liste qui viennent du fait que des monomes interviennent dans plusieurs polynomes
+    
     nb_vars=length(liste_exp[1])#on veut connaitre le nombre de variables dans l'anneau de polynomes pour les lignes de E 
 
     zero=zeros(Int64,nb_vars)
@@ -128,9 +129,9 @@ function polynomial_transformation(poly_list, T)
         union!(y_vars_set, variables(Ti))
     end
     # Sort them to fix an order.
-    @show(y_vars_set)
+    #@show(y_vars_set)
     y_vars_ordered = sort(collect(y_vars_set), by=string)
-    @show(y_vars_ordered)
+    #@show(y_vars_ordered)
     
     if length(y_vars_ordered) != length(poly_list)
         error("The number of independent variables in the transformation ($(length(y_vars_ordered))) must match the dimension of the zonotope ($(length(poly_list))).")
@@ -244,13 +245,13 @@ function dynamic_to_sparse_poly_zono(P_list)
     return SimpleSparsePolynomialZonotope(c,G,E)
 end
 
-typeof(p1)
-PT=SimpleSparsePolynomialZonotope([0.0 , 0],[1 0 2; 0 1.0 1],[2 0 1; 0 1 1])
+
+"""PT=SimpleSparsePolynomialZonotope([0.0 , 0],[1 0 2; 0 1.0 1],[2 0 1; 0 1 1])
 #pol=Array{DynamicPolynomials.Polynomial{DynamicPolynomials.Commutative{DynamicPolynomials.CreationOrder}, Graded{LexOrder}, Int64}}(undef,2)
 @polyvar z1 z2
 pol=z1+z1*z2
 MultivariatePolynomials.monomials(pol)
 PT=SimpleSparsePolynomialZonotope([1.0 , 0],[1 3 2; 0 1.0 1],[2 0 1; 0 1 1; 0 1 0])
 sparse_poly_zono_to_dynamic(PT)[1]
-sparse_poly_zono_to_dynamic((dynamic_to_sparse_poly_zono(sparse_poly_zono_to_dynamic(PT)[1])))[1]
+sparse_poly_zono_to_dynamic((dynamic_to_sparse_poly_zono(sparse_poly_zono_to_dynamic(PT)[1])))[1]"""
 
