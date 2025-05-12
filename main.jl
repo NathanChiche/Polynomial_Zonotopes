@@ -349,7 +349,8 @@ ProfileView.@profview looping(ZO)
 R=RealField()
 S,(x,y,s,t)=polynomial_ring(R,["x","y","s","t"])
 
-Trian2=get_SSPZ_from_polynomials([x*y,x])
+Trian2=get_SSPZ_from_polynomials([x*y,y])
+plot(Trian2,nsdiv=10)
 overapproximate(Trian2, Zonotope)
 norm(Trian2.G[:,1])
 

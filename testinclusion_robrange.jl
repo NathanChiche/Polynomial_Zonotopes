@@ -275,6 +275,7 @@ function inclusion_test(FPZ,PZ,epsilon,nbinitialvariables,linearsystem)
 
 end
 
+
 function test_primal() #ATTENTION: plutôt gros problème sur la tête des ranges jacobiennes qui doivent être des intervalles
     R=RealField()
     Anneau,(x,y)=polynomial_ring(R,["x","y"])

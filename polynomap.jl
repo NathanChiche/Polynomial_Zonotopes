@@ -25,26 +25,90 @@ function powerfilter(PZ::SimpleSparsePolynomialZonotope,A::Matrix{Float64},B::Ve
     return PZ
 end
 st=SimpleSparsePolynomialZonotope([0.0, 0.0],[0.0 0; 0 0],[1 0; 0 1])
-HU=applyfilter(st,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.5,0.5)
+HU=applyfilter(st,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0) 
+@time sparse_poly_zono_to_dynamic(HU)[1]
 HU.G
 HU.c
 HU.E
 @time sparse_poly_zono_to_dynamic(HU)[1]
-applyfilter(HU,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.5,0.5)
+PHU=applyfilter(HU,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0)
 PHU1=powerfilter(st,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0,98)
 PHU1.c
 PHU1.G
-@time sparse_poly_zono_to_dynamic(PHU1)[1]
+@time sparse_poly_zono_to_dynamic(PHU)[1]
 
-function iterate_filter_over_PZ(PZ::SimpleSparsePolynomialZonotope,nbiter::Int64,A::Matrix{Float64},B::Vector{Float64},m::Float64,M::Float64,power::Int64)
-    i=0
-    range=Array{IntervalArithmetic.Interval{Float64}}(undef,2)
-    while i<=nbiter
-        PZ=powerfilter(PZ,A,B,m,M,power)
-        
+function align_exponent_matrices(PZ1, PZ2)
+    e1, _ = size(PZ1.E)
+    f1, _ = size(PZ2.E)
+    if e1 < f1
+        padding = zeros(Int64, f1 - e1, size(PZ1.E, 2))
+        PZ1 = SimpleSparsePolynomialZonotope(PZ1.c, PZ1.G, vcat(PZ1.E, padding))
+    elseif f1 < e1
+        padding = zeros(Int64, e1 - f1, size(PZ2.E, 2))
+        PZ2 = SimpleSparsePolynomialZonotope(PZ2.c, PZ2.G, vcat(PZ2.E, padding))
     end
+    return PZ1, PZ2
 end
-typeof(-1..1)
+
+function inclusion_after_filter(FPZ,PZ,join,tolerance,depth)
+
+    if join=="barycentric"
+        a1(v)=sum(FPZ.G[2,j]*prod(v[k]^FPZ.E[k,j] for k in 1:2) for j in 1:size(FPZ.G)[2])+FPZ.c[2]
+        b1(v)=sum(PZ.G[2,j]*prod(v[k]^PZ.E[k,j] for k in 1:2) for j in 1:size(PZ.G)[2])+PZ.c[2]
+        domain=IntervalBox(-1..1, 2)
+        a=enclose(a1,domain,BranchAndBoundEnclosure(tol=tolerance,maxdepth=depth))
+        b=enclose(b1,domain,BranchAndBoundEnclosure(tol=tolerance,maxdepth=depth))
+        @show(a,b)
+        if a.lo>=b.lo +2*tolerance && a.hi+2*tolerance<=b.hi
+            return 1
+        end
+    else
+        a=interval(FPZ.c[2] - sum(abs(FPZ.G[2,j]) for j in 1:size(FPZ.E)[2]), FPZ.c[2] + sum(abs(FPZ.G[2,j]) for j in 1:size(FPZ.E)[2]))
+        b=interval(PZ.c[2] - sum(abs(PZ.G[2,j]) for j in 1:size(PZ.E)[2]), PZ.c[2] + sum(abs(PZ.G[2,j]) for j in 1:size(PZ.E)[2]))
+        #@show(sparse_poly_zono_to_dynamic(FPZ)[1][2])
+        @show(a,b)
+        #@show(sparse_poly_zono_to_dynamic(PZ)[1][2])
+        if a.lo>=b.lo  && a.hi<=b.hi
+            return 1
+        end
+    end
+    return "false"
+end
+
+function iterate_filter_over_PZ(PZ::SimpleSparsePolynomialZonotope,nbiter::Int64,A::Matrix{Float64},B::Vector{Float64},m::Float64,M::Float64,power::Int64,join::String; solver::String="NaturalEnclosure",tolerance::Float64=1e-3,depth::Int64=10)
+    i=1
+    while i<=nbiter
+        if i>1
+            FPZ=applyfilter(PZ,A,B,m,M)
+            @show(sparse_poly_zono_to_dynamic(PZ)[1])
+            println("inclusion test",i)
+            if inclusion_after_filter(FPZ,PZ,join,tolerance,depth)==1
+                println("INCLUSION!")
+                return PZ
+            end
+        end
+        FPZ=powerfilter(PZ,A,B,m,M,power)
+        if join=="barycentric"
+            PZ=barycentric_join(PZ,FPZ)
+        else
+            PZ,FPZ=align_exponent_matrices(PZ, FPZ)
+            PZ=zonotopic_join(PZ,FPZ,solver,tolerance,depth)
+            PZ=remove_redundant_generators(PZ)
+        end
+        i=i+1
+    end
+    return sparse_poly_zono_to_dynamic(PZ)[1],PZ
+end
+
+"""SAVE THE RESULT FOR I=5 and zonotopic join: 24 iterations"""
+
+@time iterate_filter_over_PZ(st,2,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0,5,"zono",solver="NaturalEnclosure",tolerance=1e-2,depth=10)
+"""SAVE THE RESULT FOR I=16"""
+
+remove_redundant_generators(h).E
+sparse_poly_zono_to_dynamic(remove_redundant_generators(h))[1][1]
+e[1]
+@time iterate_filter_over_PZ(st,15,[0 1; -0.7 1.4],[1.1, -1.3, 0.7],0.0,1.0,16,"zono",solver="NaturalEnclosure",tolerance=1e-2,depth=10)
 
 
 function poly_apply_on_SSPZ(PZ::SimpleSparsePolynomialZonotope,list_poly,field::Nemo.Field)
@@ -138,3 +202,47 @@ function iterate_polynomials_over_PZ(Polynomes,PZ::SimpleSparsePolynomialZonotop
     return liste
 end
 
+function iterate_oned(Polynomes,PZ::SimpleSparsePolynomialZonotope,nb_iter::Int64,borne_union::Int64,field::Nemo.Field,choice;max_order::Int64,toreduce::Int64=200,maxdegree::Int64=50,power::Int64=1,inclusiontest::Int64=1,solver="NaturalEnclosure",tolerance::Float64=1e-2,maxdepth::Int64=10)
+    i=0
+    nb_reduc=0
+    liste=[PZ]
+    
+    while i<nb_iter
+        println("itération numéro",i)
+        fPZ=liste[end]
+        PZ_previous=fPZ
+        for p in 1:power 
+            println("avant appli")
+            fPZ=poly_apply_on_SSPZ(fPZ,Polynomes,field)
+            println("apres appli")
+        end
+        if i>=borne_union+1 && inclusiontest==1
+            inclusion=inclusion_after_filter(fPZ,PZ,choice,tolerance,maxdepth)
+            @show(inclusion)
+            if inclusion!="false"
+                println("INCLUSION!")
+                return liste
+            end
+        end
+        if i>= borne_union
+            println("entre join")
+            if choice=="zono"
+                PZ=zonotopic_join(PZ_previous,fPZ,solver,tolerance,maxdepth)
+                PZ=remove_unused_variables(PZ)
+            else
+                PZ=barycentric_join(PZ_previous,fPZ)
+            end
+            println("sort join")
+        else
+            PZ=fPZ
+        end
+        if size(PZ.G)[2]>=max_order
+            PZ=Simple_reduce_order(PZ,max_order)
+            nb_reduc+=1
+        end
+        i+=1
+        push!(liste,PZ)
+    end
+    println("nombre de réductions, ",nb_reduc)
+    return liste
+end

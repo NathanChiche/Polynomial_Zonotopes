@@ -53,6 +53,29 @@ function testinclusion(p1,p2,dx,dy,a1,a2,nbiter,withoutjoin,join,maxo,inclusiont
     return fin,next
 end
 
+function testinclusion_oned(p1,p2,dx,dy,a1,a2,nbiter,withoutjoin,join,maxo,inclusiontes,solve,powerf)
+    Pstart=get_SSPZ_from_polynomials([a1*x + dx; a2*y + dy])
+    fin=iterate_oned([p1,p2],Pstart,nbiter,withoutjoin,R,join,max_order=maxo,inclusiontest=inclusiontes,solver=solve,power=powerf)
+    fini=fin[end]
+    next=poly_apply_on_SSPZ(fini,[p1,p2],R)
+    return fin,next
+end
+p=2*x
+q=y
+dx=0
+dy=0
+nbiter=3
+withoutjoin=1
+join="barycentric"
+a1=0.25
+a2=0.2
+maxo=200000
+inclusiontes=1
+solve="NaturalEnclosure"
+powerf=1
+@time testinclusion_oned(p,p,dx,dy,a1,a2,nbiter,withoutjoin,join,maxo,inclusiontes,solve,powerf)
+
+
 function testlineaire(nbiter,withoutjoin,join,inclusiotes)
     p1=0.25*x+0.2*y +7/20
     p2=0.2*x+0.2*y 
